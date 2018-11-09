@@ -1,4 +1,4 @@
-![Welcome to the Zuul Building Blocks Index](.github/zubbi-index.png)
+![Welcome to the Zuul Building Blocks Index](https://github.com/bmwcarit/zubbi/raw/master/.github/zubbi-index.png)
 
 <br/>
 
@@ -20,7 +20,7 @@ based CI system - even if they are spread over multiple tenants or repositories.
 - GitHub + GitHub App
 
 ## Architecture
-![zubbi-architecture](.github/zubbi-architecture.png)
+![zubbi-architecture](https://github.com/bmwcarit/zubbi/raw/master/.github/zubbi-architecture.png)
 
 Zubbi consists of two parts, **zubbi web** and **zubbi scraper**. It uses
 **Elasticsearch** as storage backend and needs **GitHub repositories** as
