@@ -1,0 +1,15 @@
+- tenant:
+    exclude-unprotected-branches: true
+    name: foo
+    source:
+      github:
+        config-projects:
+          - orga1/repo1:
+              exclude: [pipeline, project]
+          - orga1/repo2
+          - orga2/repo1
+        untrusted-projects:
+          - orga2/repo1: {shadow: orga1/repo2}
+          - orga1/repo2:
+              exclude: [project]
+          - orga2/repo3

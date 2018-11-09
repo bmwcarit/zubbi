@@ -1,0 +1,32 @@
+{% import 'macros.html' as macros with context %}
+{% import 'macro-searchbox.html' as search_box with context %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {% include '_css.html' %}
+    <title>{% block title %}{% endblock %} - Zubbi</title>
+  </head>
+  <body>
+    {% include '_navbar.html' %}
+
+    {% block body %}
+        <section class="content container">
+        <header class="mt-3">
+            {% block header %}{% endblock %}
+        </header>
+        {% block content %}{% endblock %}
+        </section>
+    {% endblock %}
+
+    {% block footer %}
+        {% include '_footer.html' %}
+    {% endblock %}
+
+    {% block js %}
+        {% include '_js.html' %}
+    {% endblock %}
+  </body>
+</html>

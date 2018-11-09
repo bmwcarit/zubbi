@@ -1,0 +1,6 @@
+- project:
+    check:
+      jobs:
+        - some-job
+
+- no-job:

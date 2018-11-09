@@ -1,0 +1,16 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+zubbi = {editable = true, path = "."}
+
+[dev-packages]
+"flake8" = "*"
+"flake8-docstrings" = "*"
+"flake8-import-order" = "*"
+pytest = "*"
+pytest-cov = "*"
+requests-mock = "*"
+freezegun = "*"

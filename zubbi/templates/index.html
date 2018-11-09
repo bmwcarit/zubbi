@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% import 'macros.html' as macros %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block header %}
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12" align="center">
+    <h1>Welcome to the Zuul Building Blocks Index</h1>
+  </div>
+</div>
+<div class="row justify-content-center">
+  <div class="col-8" align="center">
+    {% block subtitle %}
+      <h4 class="my-5 text-muted">Find jobs and roles used within your CI system ...</h4>
+    {% endblock %}
+    <form action="{{ url_for('zubbi.search') }}">
+    {{ search_box.search_box() }}
+    </form>
+    <div class="text-center pt-4">
+      Or use the <a href="{{ url_for('zubbi.search', advanced=True) }}">advanced search <i class="fas fa-search-plus"></i></a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+<div class="block-description">
+    {% if block.description_rendered %}
+        {{ block.description_rendered }}
+        {# If the description is not html, we show the link to the how-to #}
+        {% if not block.has_html_description %}
+            <p class="alert alert-primary text-center" role="alert">
+                Looks like you could make your description look nicer. <br/> Take a look
+                at our guide:
+                <a href="{{ url_for('zubbi.how-to')}}">How to document jobs and roles for Zubbi</a>.
+            </p>
+        {% endif %}
+    {% else %}
+        <div class="justify-content-center mt-3" align="center">
+            <div class="mb-4">
+                <span class="strikethrough"><i class="far fa-6x fa-file-alt"></i></span>
+            </div>
+            <div class="col-8">
+                <p>Looks like no description could be found for this {{ block|block_type }}.
+                    If you want to know how to write a proper documentation, take a look at our
+                    guide:
+                    <a href="{{ url_for('zubbi.how-to')}}">How to document jobs and roles for Zubbi</a>.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+</div>

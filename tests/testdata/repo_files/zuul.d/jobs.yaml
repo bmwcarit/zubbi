@@ -1,0 +1,17 @@
+- job:
+    name: my-cool-new-job
+    parent: cool-base-job
+    description: |
+      This is just a job for testing purposes.
+    run: playbooks/non-existing-playbook.yaml
+
+- job:
+    name: another-job
+    description: |
+      This time without a playbook and a parent.
+
+- job:
+    name: cool-base-job
+    description: |
+      This is a base job with explicitly no parent.
+    parent: null

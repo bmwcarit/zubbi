@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}How to document jobs and roles for Zubbi{% endblock %}
+
+{% block header %}
+<div class="text-center">
+    <h1>How to document jobs and roles for Zubbi</h1>
+</div>
+{% endblock %}
+
+{% block content %}
+<div align="center">
+    <div class="col-10 mt-4 text-justify">
+        <h2>Supported formats</h2>
+        <p>For the best result, we recommend to write the documentation of your
+        jobs and roles in <b>reStructuredText</b> <i>(.rst)</i> format.
+        As a fallback, Zubbi also supports Markdown <i>(.md)</i> and
+        Text <i>(.txt)</i> files.</p>
+
+        <h4>Where to put the documentation?</h4>
+        <p>For <b>jobs</b>, the documentation must be put in the <i>description</i> field
+        of the job definition. In this case, only reStructuredText format is supported.
+
+        In case of <b>roles</b>, the documentation must be put in a README file inside
+        the role's directory. Please note, that the file extension must match
+        the used format to be rendered properly.</p>
+
+        <h2>Documenting with reStructuredText</h2>
+        <p>For a short overview on reStructuredText, you can take a look at the
+        <a href="http://docutils.sourceforge.net/docs/user/rst/quickref.html">quickref</a>
+        and the
+        <a href="http://docutils.sourceforge.net/docs/user/rst/cheatsheet.txt">Cheat Sheet</a>.
+        </p>
+
+        <p>We are using the <i>zuul-sphinx</i> plugin for parsing the documentation
+        files. This Sphinx extension provides some additional directives that can be
+        used within the job and role documentation.</p>
+
+        {% block additional_links %}{% endblock %}
+
+        <h4>Role example</h4>
+        {% include 'includes/role-example.html' %}
+
+        <h5>Job example</h5>
+        {% include 'includes/job-example.html' %}
+
+        <h4>Showing code examples</h4>
+        <p>Sphinx uses pygments to allow syntax highlighting in code examples.
+        To activate syntax highlighting in your job or role description, you
+        have to use the <i>code-block</i> directive for code examples like this:</p>
+
+        {% include 'includes/code-example.html' %}
+
+
+        <p>Be sure to provide the correct language in the code-block directive,
+        otherwise it won't be highlighted properly. For more information you can
+        take a look at the
+        <a href="http://www.sphinx-doc.org/en/stable/markup/code.html">
+            official Sphinx documentation</a>.</p>
+
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Error {{ error_code }}{% endblock %}
+
+{% block content %}
+<h1 class="pb-5">Something went wrong ...</h1>
+<div class="alert alert-danger" role="alert">
+    <div class="row">
+        <div class="col-2">
+            <i class="fas fa-6x fa-exclamation-triangle pt-2"></i>
+        </div>
+        <div class="col-10">
+            <h2>Error <small class="text-muted">{{ error_code }}</small></h2>
+            <br>
+            <blockquote class="blockquote">
+            {{ error_message }}
+            </blockquote>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# Don't include the footer on the error page, because the context is missing
+to show the version and indexed timestamp #}
+{% block footer %}{% endblock %}

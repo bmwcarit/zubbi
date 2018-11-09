@@ -1,0 +1,55 @@
+<div class="highlight-rst notranslate"><div class="highlight"><pre><span></span>This role does some awesome stuff!
+
+The following documentation contains examples for different variable types
+and how they can be documented properly using the zuul specific Sphinx
+directives.
+
+<span class="gs">**Role variables**</span>
+
+<span class="p">..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> mandatory_variable
+
+   This is just a simple variable that must be set when using the role.
+
+<span class="p">..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> optional_variable
+   <span class="nc">:default:</span> <span class="nf">True</span>
+
+   This variable is optional. If not set, its default value will be used.
+
+<span class="p">..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> list_variable
+   <span class="nc">:default:</span> <span class="nf">[]</span>
+   <span class="nc">:type:</span> <span class="nf">list</span>
+
+   This variable must be a list. If not set, an empty list will be used.
+   This syntax should be used for simple lists containing simple elements
+   like Strings, Bools or Numbers.
+
+<span class="p">..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> complex_list
+   <span class="nc">:type:</span> <span class="nf">list</span>
+
+   If the list contains more complex items, it can be documented like this
+   one. Take a look at the intendation.
+
+<span class="p">   ..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> item
+      <span class="nc">:type:</span> <span class="nf">dict</span>
+
+      This shows how a single list item should look like. In the rendered
+      documentation file, this list item will be namespaced accordingly to
+      state out, that it belongs to the complex_list variable.
+
+<span class="p">      ..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> message
+
+         Every list item must have a message.
+
+<span class="p">      ..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> timestamp
+         <span class="nc">:default:</span> <span class="nf">&lt;current_time&gt;</span>
+
+         The timestamp is optional. If not set, the role will use the current
+         timestamp.
+
+<span class="p">..</span> <span class="ow">zuul:rolevar</span><span class="p">::</span> dict_variable
+   <span class="nc">:type:</span> <span class="nf">dict</span>
+
+   This variable must be a dictionary. As it does not provide any default
+   value and thus, must be set to use this role.
+</pre></div>
+</div>

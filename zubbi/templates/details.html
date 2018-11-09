@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Details for {{ block|block_type }} {{ block.name }}{% endblock %}
+{% block header %}
+
+{% set show_search = request.referrer and url_for('zubbi.search') in request.referrer %}
+{{ macros.breadcrumb("Details", show_search) }}
+
+<div class="row">
+    <div class="col-8">
+        <h1><small class="text-muted">{{ block|block_type|capitalize }}</small> {{ block.name }}</h1>
+    </div>
+    {% if block.last_updated %}
+    <div class="col-4 block-info">
+        <p>Last updated: {{ block.last_updated | prettydate }}</p>
+    </div>
+    {% endif %}
+</div>
+<hr>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-3">
+    <div class="sidebar-section">
+      <strong>Repository</strong><br>
+      <a href="{{ block.url }}" class="vertical-tab"><i class="fab fa-github"></i>
+      {{ block.repo }}
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <strong>Platforms</strong>
+      {% if block.platforms %}
+        <sup class="text-info">
+            <i class="fas fa-info-circle"
+               title="This {{ block|block_type }} runs on {% for platform in block.platforms %}{{ platform | capitalize }}{{ ', ' if not loop.last else '' }}{% endfor %}"
+               data-toggle="tooltip">
+            </i>
+        </sup>
+        <br>
+        <span class="vertical-tab">
+        {% for platform in block.platforms %}
+          {# FIXME (fschmidt): This won't work for mac (currently not in use) #}
+          <i class="fab fa-{{ platform }} mr-3" title="{{ platform | capitalize }}"></i>
+        {% endfor %}
+        </span>
+      {% else %}
+        <sup class="text-info"><i class="fas fa-info-circle" title="This {{ block|block_type }} does not provide any platform information" data-toggle="tooltip"></i></sup>
+        <br>
+        <span class="vertical-tab">
+          <i class="fas fa-question-circle" title="Unkown"></i>
+        </span>
+      {% endif %}
+    </div>
+    {% if block is job_type and block.parent %}
+    <div class="sidebar-section">
+      <strong>Parent</strong><br>
+      <a href="{{ url_for('zubbi.search', query=block.parent, exact=True, fields='name', block_filter=block|block_type) }}" class="vertical-tab"><i class="fas fa-search"></i>
+      {{ block.parent }}
+      </a>
+    </div>
+    {% endif %}
+    <div class="sidebar-section">
+      {% block tenant_list %}
+      <strong>Tenants</strong>
+      <sup class="text-info"><i class="fas fa-info-circle" title="This {{ block|block_type }} can be used in the following tenants" data-toggle="tooltip"></i></sup>
+      <br>
+      <ul>
+        {% for tenant in block.tenants %}
+        <li>{{ tenant }}</li>
+        {% endfor %}
+      </ul>
+      {% endblock %}
+    </div>
+  </div>
+  <div class="col-9 block-details">
+      <ul class="nav nav-tabs">
+          <li class="nav-item active"><a class="nav-link active" href="#description">Description</a></li>
+          {# Only show the (deactivated) link for roles #}
+          {% if block.changelog is defined %}
+              <li class="nav-item"><a class="nav-link {% if not block.changelog %}disabled{% endif %}" href="#changelog">Changelog</a></li>
+          {% endif %}
+      </ul>
+
+      <div class="tab-content">
+          <div id="description" class="tab-pane active">
+              {% include 'includes/block-description.html' %}
+          </div>
+          <div id="changelog" class="tab-pane">
+              {% include 'includes/block-changelog.html' %}
+          </div>
+      </div>
+</div>
+{% endblock %}
