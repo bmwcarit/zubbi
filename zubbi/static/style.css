@@ -1,0 +1,179 @@
+/* Copyright 2018 BMW Car IT GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Zubbi CSS stylesheet */
+
+/* Bootstrap overrides */
+
+.alert, .btn, .card, .breadcrumb, .form-control, .pagination,
+.page-item:last-child .page-link, .page-item:first-child .page-link,
+.nav-tabs .nav-link {
+    border-radius: 0;
+}
+
+ul {
+    list-style-type: square;
+}
+
+dt {
+     font-weight: normal;
+}
+
+code {
+     color:#222;
+     font-weight: bold;
+}
+
+dl dd {
+    margin-left: 30px;
+}
+
+.descclassname {
+    font-weight: normal;
+    color:#444
+}
+
+a.headerlink {
+    color: #DDD;
+    padding: 0 4px;
+    text-decoration: none;
+}
+
+a.headerlink:hover {
+    color: #444;
+    background: #EAEAEA;
+}
+
+/* Site footer */
+.footer {
+    background-color: #f8f9fa;
+    margin-top: 1.5rem;
+    /* Make the footer stick to the bottom */
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set a fixed height (must be <= the margin of the body) */
+    height: 55px;
+}
+
+/* Adapt the whole page content to make the footer stick to the bottom */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    /* Add additional space, so the footer does not overlap the content */
+    margin-bottom: 70px;
+}
+
+.footer .value {
+    padding: 1rem 1.5rem;
+    display: inline-block;
+}
+
+/* Sidebar in details page */
+
+.sidebar-section {
+    padding: 5px;
+    border-bottom: 1px solid #e6e6e6;
+}
+
+.sidebar-section:last-of-type {
+    border: 0;
+}
+
+.vertical-tab {
+    padding: 10px;
+    display: block;
+}
+
+a.vertical-tab:hover {
+    text-decoration: none;
+}
+
+.position-bottom-right {
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+    margin: 12px;
+}
+
+.block-info {
+    text-align: right;
+    font-style: italic;
+}
+
+/* Description on details page */
+.block-description, .block-changelog {
+    padding: 1.25rem .5rem;
+}
+
+.block-description h1 {
+    font-size: 2rem;
+}
+
+.block-description h2 {
+    font-size: 1.5rem;
+}
+
+/* Changelog on details page */
+.block-changelog h1 {
+    font-size: 1.25rem;
+    padding-bottom: .5rem;
+    border-bottom: 1px solid rgba(0,0,0,.1);
+    margin-bottom: 1.5rem;
+}
+
+.block-changelog h2 {
+    font-size: 1rem;
+}
+
+/* Description not found in details page */
+.strikethrough {
+    position: relative;
+}
+
+.strikethrough:before {
+    position:absolute;
+    content: "";
+    left: 0;
+    top: 50%;
+    right: 0;
+    border-top: 5px solid;
+    border-color: red;
+    margin: -50%;
+    -webkit-transform:rotate(-45deg);
+    -moz-transform:rotate(-45deg);
+    -ms-transform:rotate(-45deg);
+    -o-transform:rotate(-45deg);
+    transform:rotate(-45deg);
+}
+
+/* Fake mouse for let me zubbi it four you */
+#fake-mouse {
+    position: absolute;
+    visibility: hidden;
+    z-index: 9999;
+}
+
+/* code blocks */
+
+pre {
+    padding: 15px;
+    margin: 30px 0;
+    background-color: #f9f9f9;
+    border: 1px solid #d3d3d3;
+}

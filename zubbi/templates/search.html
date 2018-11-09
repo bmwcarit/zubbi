@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Search {%- if result is not none %} results for "{{ query }}"{%- endif %}
+{% endblock %}
+
+{% block header %}
+{{ macros.breadcrumb("Search") }}
+
+<form action="{{ url_for('zubbi.search') }}" class="form-inline_search">
+<div class="row">
+  <div class="col-8">
+    <p class="h1">Search {%- if result is not none %} results for <em>"{{ query }}"</em>{%- endif %}</p>
+  </div>
+  <div class="col">
+    <div class="float-right">
+      {{ search_box.search_box(inline_search=True) }}
+      <div class="text-right">
+        <small><a href="#" id="advancedSearchBoxShow"{%- if advanced %}style="visibility: hidden"{%- endif -%}>Advanced Search <i class="fas fa-search-plus"></i></a></small>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="alert alert-secondary alert-dismissible show" {%- if not advanced %}style="display: none"{%- endif -%} role="alert" id="advancedSearchBox">
+  <div class="row">
+    <div class="col-4">
+      <div class="float-left">
+        <strong>Fields</strong>
+      </div>
+      <div class="float-left ml-3">
+        {% for field in searchable_fields | sort %}
+        <div class="form-check form-check">
+          <input class="form-check-input" type="checkbox" id="inlineCheckbox{{ field }}" name="fields" value="{{ field }}" {%- if (fields and field in fields) or (not fields and field in default_search_fields) %} checked="checked" {%- endif -%}>
+          <label class="form-check-label" for="inlineCheckbox{{ field }}">{{ field | capitalize }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col">
+      <div class="float-left">
+        <strong>Block types</strong>
+      </div>
+      <div class="float-left ml-3">
+        {% for type in searchable_block_types | sort %}
+        <div class="form-check form-check">
+          <input class="form-check-input" type="checkbox" id="inlineCheckbox{{ type }}" name="block_filter" value="{{ type }}" {%- if type in block_filter or block_filter | length == 0 %} checked="checked" {%- endif -%}>
+          <label class="form-check-label" for="inlineCheckbox{{ type }}">{{ type | capitalize }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col">
+      <div class="float-left">
+        <strong>Options</strong>
+      </div>
+      <div class="float-left ml-3">
+        <div class="form-check form-check">
+          <input class="form-check-input" type="checkbox" id="inlineCheckboxExact" name="exact" value="True" {%- if exact %} checked="checked" {%- endif -%}>
+          <label class="form-check-label" for="inlineCheckboxExact">Exact</label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button id="advancedSearchBoxClose" type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+  <button class="btn btn-primary position-bottom-right" type="submit"><i class="fas fa-search"></i> Search</button>
+</div>
+</form>
+{% endblock %}
+
+{% block content %}
+{% if result is not none -%}
+<p><strong>{{ result.hits.total }}</strong> results for <em><strong>"{{ query }}"</strong></em></p>
+
+{% for row in result|batch(3) %}
+<div class="row">
+  <div class="card-columns col">
+  {%- for match in row %}
+    <div class="card">
+      <div class="card-header">
+        {% if match is role_type -%}
+          <i class="fas fa-cubes"></i>
+        {% else -%}
+          <i class="fas fa-play-circle"></i>
+        {% endif -%}
+        {{ match|block_type|capitalize }}
+      </div>
+      <div class="card-body">
+        <h5 class="card-title">
+          {{ match.name }}
+        </h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{ match.repo }}</h6>
+        <p class="card-text">{% if match.description %}{{ match.description.split('\n')|first }}{% endif %}</p>
+        <a href="{{ url_for('zubbi.details', repo=match.repo, block_type=match|block_type, name=match.name) }}" class="btn btn-primary"><i class="fas fa-info-circle"></i> Show details</a>
+      </div>
+    </div>
+  {%- endfor %}
+  </div>
+</div>
+{% endfor %}
+
+<div class="row justify-content-center">
+  <nav>
+    <ul class="pagination">
+      {{ macros.page_item(text='Previous', from=filter_from - batch_size, disabled=pagination.current == 0) }}
+
+      {%- for step in pagination.steps -%}
+        {%- for index in step -%}
+          {{ macros.page_item(text=index + 1, from=index * batch_size, active=index == pagination.current) }}
+        {%- endfor -%}
+
+        {%- if not loop.last -%}
+        <li class="page-item disabled"><a class="page-link" href="#">...</a></li>
+        {%- endif -%}
+      {%- endfor -%}
+
+      {{ macros.page_item(text='Next', from=filter_from + batch_size, disabled=pagination.current == pagination.last_page) }}
+    </ul>
+  </nav>
+</div>
+{% endif -%}
+{% endblock %}

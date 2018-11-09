@@ -1,0 +1,11 @@
+<div class="block-changelog">
+    {% if block.changelog_rendered %}
+        {{ block.changelog_rendered }}
+        {% if not block.has_html_changelog %}
+            <p class="alert alert-primary text-center" role="alert">
+                Looks like you could make your changelog look nicer. <br/> Take a look at our guide:
+                <a href="{{ url_for('zubbi.how-to')}}">How to document jobs and roles for Zubbi</a>.
+            </p>
+        {% endif %}
+    {% endif %}
+</div>

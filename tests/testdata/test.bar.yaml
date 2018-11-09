@@ -1,0 +1,9 @@
+- tenant:
+    exclude-unprotected-branches: true
+    name: bar
+    source:
+      ascent:
+        untrusted-projects:
+          - repo1
+          - repo2
+          - repo3

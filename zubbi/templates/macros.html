@@ -1,0 +1,39 @@
+{%- macro hidden_field(name, value) -%}
+    {%- if value -%}
+    <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {%- endif -%}
+{%- endmacro -%}
+
+{% macro breadcrumb(page_name, show_search=False) -%}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('zubbi.index') }}">Home</a></li>
+    {% if show_search %}<li class="breadcrumb-item"><a href="{{ request.referrer }}">Search</a></li>{% endif %}
+    <li class="breadcrumb-item active" aria-current="page">{{ page_name }}</li>
+  </ol>
+</nav>
+{%- endmacro %}
+
+{% macro page_item(active=False, disabled=False, text=None, from=0) -%}
+  {%- if active -%}
+    {% set active_class = 'page-item active' %}
+  {%- elif disabled -%}
+    {% set active_class = 'page-item disabled' %}
+  {%- else -%}
+    {% set active_class = 'page-item' %}
+  {%- endif %}
+  <li class="{{active_class}}">
+    <a class="page-link" href="{{ url_for('zubbi.search', query=query, block_filter=block_filter, exact=exact, from=from, size=batch_size, fields=fields, advanced=advanced) }}">{{ text }}</a>
+  </li>
+{%- endmacro %}
+
+{% macro nav_item(name, link_text, icon_class='') -%}
+  {%- if name is current_endpoint -%}
+    {% set active_class = 'active' %}
+  {% else %}
+    {% set active_class = '' %}
+  {%- endif -%}
+<li class="nav-item">
+    <a class="nav-link {{ active_class }}" href="{{ url_for(name) }}"><i class="{{ icon_class }}"></i> {{ link_text }}</a>
+</li>
+{%- endmacro %}

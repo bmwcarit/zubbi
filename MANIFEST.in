@@ -1,0 +1,2 @@
+recursive-include zubbi/templates/*
+recursive-include zubbi/static/*

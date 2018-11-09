@@ -1,0 +1,21 @@
+# Application files
+instance/
+settings.cfg
+.env
+
+# Binaries
+__pycache__
+*.pyc
+
+# Packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Tests
+.tox/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/

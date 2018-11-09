@@ -1,0 +1,21 @@
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="p p-Indicator">-</span> <span class="l l-Scalar l-Scalar-Plain">job</span><span class="p p-Indicator">:</span>
+    <span class="l l-Scalar l-Scalar-Plain">name</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">run-tox</span>
+    <span class="l l-Scalar l-Scalar-Plain">description</span><span class="p p-Indicator">:</span> <span class="p p-Indicator">|</span>
+      <span class="no">Jobs can be documented in the same way as roles. Just note the difference</span>
+      <span class="no">in the name of the Sphinx directive.</span>
+      <span class="no">For a proper formatting, use the &lt;code&gt;|&lt;/code&gt; format for YAML multiline</span>
+      <span class="no">Strings.</span>
+
+      <span class="no">**Job variables**</span>
+
+      <span class="no">.. zuul:jobvar:: path</span>
+         <span class="no">:default: .</span>
+
+         <span class="no">Path were to run tox. If not set, the current directory will be used.</span>
+
+      <span class="no">.. zuul:jobvar:: envlist</span>
+         <span class="no">:type: list</span>
+
+         <span class="no">List of all tox envs which should be executed</span>
+</pre></div>
+</div>

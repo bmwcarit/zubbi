@@ -1,0 +1,20 @@
+# global configuration
+ES_HOST = '<elasticsearch_host>'
+ES_PORT = 9200
+ES_USER = 'user'
+ES_PASSWORD = 'password'
+
+# Scraper configuration
+GITHUB_APP_ID = 0
+GITHUB_APP_KEY = '<path_to_keyfile>'
+GITHUB_WEBHOOK_SECRET = '<secret>'
+# NOTE: Use only one of the following, not both
+TENANT_SOURCES_REPO = '<orga>/<repo>'
+TENANT_SOURCES_FILE = 'example.main.yaml'
+
+ZMQ_PUB_SOCKET_ADDRESS = 'tcp://*:5556'
+ZMQ_SUB_SOCKET_ADDRESS = 'tcp://localhost:5556'
+# Timeout in milliseconds (5 min)
+ZMQ_SUB_TIMEOUT = 300000
+# Interval after which a repo will be scraped in any case (in hours)
+FORCE_SCRAPE_INTERVAL = 24
