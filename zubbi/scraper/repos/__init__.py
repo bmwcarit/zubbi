@@ -33,8 +33,8 @@ class Repository(abc.ABC):
         """Get the blame info for this path."""
 
     @abc.abstractmethod
-    def url(self, file_path):
-        """Get the URL to the file."""
+    def url(self):
+        """Get the URL to this repository."""
 
     @abc.abstractproperty
     def private(self):
