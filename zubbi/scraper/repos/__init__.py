@@ -36,11 +36,15 @@ class Repository(abc.ABC):
     def url(self):
         """Get the URL to this repository."""
 
-    @abc.abstractproperty
+    @abc.abstractmethod
+    def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
+        """Get the URL to the given path."""
+
+    @abc.abstractmethod
     def private(self):
         """Property indicating if the repository is private."""
 
-    @abc.abstractproperty
+    @abc.abstractmethod
     def name(self):
         """Property for the name of the repository."""
 

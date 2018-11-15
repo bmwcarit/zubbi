@@ -76,18 +76,25 @@ class GitRepository(Repository):
         return {Path(f).name: FileContent(f) for f in files}
 
     def last_changed(self, path):
+        # TODO Implement...
         pass
 
     def blame(self, path):
+        # TODO Implement...
         pass
+
+    def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
+        # TODO Implement
+        return self.remote_url
 
     @property
     def url(self):
-        return self._repo.html_url
+        return self.remote_url
 
     @property
     def private(self):
-        return self._repo.private
+        # TODO We need to check if gerrit has some concept of private/public repos
+        return False
 
     @property
     def name(self):
