@@ -38,6 +38,7 @@ requires = [
     "jinja2",
     "readme_renderer",
     "tabulate",
+    "gitpython",
 ]
 
 setup(
