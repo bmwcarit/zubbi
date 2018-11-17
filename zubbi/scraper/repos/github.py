@@ -141,6 +141,7 @@ class GitHubRepository(Repository):
         return repo
 
     def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
+        # TODO This needs to be implemented by git.py as well
         file_url = self._repo.file_contents(file_path).html_url
 
         if highlight_start is not None:
