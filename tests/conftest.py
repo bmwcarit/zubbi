@@ -21,6 +21,7 @@ from elasticsearch_dsl.connections import connections
 
 import zubbi
 from zubbi.scraper.repos import Repository
+from zubbi.utils import urljoin
 
 
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "testdata")
@@ -45,8 +46,11 @@ class DummyRepo(Repository):
     def last_changed(self, path):
         pass
 
-    def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
+    def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
         return "https://github/{}".format(file_path)
+
+    def url_for_directory(self, directory_path):
+        return urljoin(self.url, "tree/master", directory_path)
 
     def blame(self, path):
         pass
