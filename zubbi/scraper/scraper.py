@@ -89,9 +89,6 @@ class Scraper:
         try:
             roles = self.repo.list_directory("roles")
             for role_name, role_content in roles.items():
-                if not role_content.type == "dir":
-                    # We can only parse role directories
-                    continue
                 try:
                     last_changed = self.repo.last_changed(role_content.path)
                     existing_files = self.repo.list_directory(role_content.path)
