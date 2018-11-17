@@ -100,7 +100,11 @@ class GitRepository(Repository):
         # TODO Implement...
         pass
 
-    def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
+    def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
+        # TODO Implement
+        return self.remote_url
+
+    def url_for_directory(self, directory_path):
         # TODO Implement
         return self.remote_url
 

@@ -19,6 +19,7 @@ import requests
 
 from zubbi.scraper.exceptions import CheckoutError
 from zubbi.scraper.repos import Repository
+from zubbi.utils import urljoin
 
 
 LOGGER = logging.getLogger(__name__)
@@ -140,8 +141,7 @@ class GitHubRepository(Repository):
         repo = self.gh.repository(owner=owner, repository=repo_name)
         return repo
 
-    def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
-        # TODO This needs to be implemented by git.py as well
+    def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
         file_url = self._repo.file_contents(file_path).html_url
 
         if highlight_start is not None:
@@ -151,6 +151,9 @@ class GitHubRepository(Repository):
                 file_url = "{}-L{}".format(file_url, highlight_end)
 
         return file_url
+
+    def url_for_directory(self, directory_path):
+        return urljoin(self.url, "tree/master", directory_path)
 
     @property
     def url(self):

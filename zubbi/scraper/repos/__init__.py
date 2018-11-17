@@ -37,8 +37,12 @@ class Repository(abc.ABC):
         """Get the URL to this repository."""
 
     @abc.abstractmethod
-    def url_for_path(self, file_path, highlight_start=None, highlight_end=None):
-        """Get the URL to the given path."""
+    def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
+        """Get the URL to the file path."""
+
+    @abc.abstractmethod
+    def url_for_directory(self, directory_path):
+        """Get the URL for the given directory path."""
 
     @abc.abstractmethod
     def private(self):
