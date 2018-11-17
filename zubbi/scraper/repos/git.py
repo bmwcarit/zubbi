@@ -16,6 +16,7 @@ import logging
 from pathlib import Path
 
 from git import Repo
+from git.exc import GitCommandError, InvalidGitRepositoryError
 
 from zubbi.scraper.repos import Repository
 
@@ -23,8 +24,7 @@ from zubbi.scraper.repos import Repository
 LOGGER = logging.getLogger(__name__)
 
 
-# TODO Currently, there is no way to specify a different default branch for a
-# "generic" git repository.
+# TODO Currently, there is no way to specify a different default branch for a "generic" git repository.
 # If Gerrit (which will use this implementation) has some similar concept of
 # default branches, we have to find a way to implement this.
 DEFAULT_BRANCH = "master"
@@ -35,19 +35,34 @@ class GitRepository(Repository):
         self.repo_name = repo_name
         self.workspace_dir = Path(workspace_dir)
         self.remote_url = remote_url
-        self._repo = self._get_repo_object()
+        self._repo = self._get_repo_object(retry=True)
 
-    def _get_repo_object(self):
+    def _get_repo_object(self, retry=False):
         # Clone the repository if it does not exist, otherwise just fetch it
         # and reset the HEAD.
         repo_src_path = self.workspace_dir / self.repo_name
+        repo = None
         if repo_src_path.exists():
-            repo = Repo(repo_src_path)
-        #    # TODO fetch and reset HEAD
+            try:
+                repo = Repo(repo_src_path)
+                # TODO fetch and reset HEAD
+                # TODO Which remote?
+                repo.remotes["origin"].fetch(DEFAULT_BRANCH)
+            except GitCommandError as e:
+                LOGGER.error("Fetching repo '%s' failed: %s" % (self.repo_name, e))
+            except InvalidGitRepositoryError as e:
+                LOGGER.error("Could not use existing repository in '%s': %s" % (repo_src_path, e))
         else:
-            repo = Repo.clone_from(self.remote_url, repo_src_path, bare=True, depth=1)
-        print(repo)
+            try:
+                repo = Repo.clone_from(self.remote_url, repo_src_path, bare=True, depth=1)
+            except GitCommandError as e:
+                LOGGER.error("Cloning repo '%s' failed: %s" % (self.repo_name, e))
 
+        if repo is None and retry:
+            LOGGER.info("Retrying clone/fetch once")
+            return self._get_repo_object()
+
+        # TODO How to skip this repository in the scraper/parser if repo is None?
         return repo
 
     def check_out_file(self, file_path):
@@ -68,7 +83,6 @@ class GitRepository(Repository):
             command.append(directory_path)
 
         files = self._repo.git.execute(command).split()
-        print(files)
 
         # To be compatible with the current GitHub implementation, the resulting
         # dictionary must provide the filename as key and a Contents-like object
