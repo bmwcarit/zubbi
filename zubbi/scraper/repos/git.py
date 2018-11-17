@@ -23,7 +23,6 @@ from zubbi.scraper.repos import Repository
 
 LOGGER = logging.getLogger(__name__)
 
-
 # TODO Currently, there is no way to specify a different default branch for a "generic" git repository.
 # If Gerrit (which will use this implementation) has some similar concept of
 # default branches, we have to find a way to implement this.
@@ -51,10 +50,14 @@ class GitRepository(Repository):
             except GitCommandError as e:
                 LOGGER.error("Fetching repo '%s' failed: %s" % (self.repo_name, e))
             except InvalidGitRepositoryError as e:
-                LOGGER.error("Could not use existing repository in '%s': %s" % (repo_src_path, e))
+                LOGGER.error(
+                    "Could not use existing repository in '%s': %s" % (repo_src_path, e)
+                )
         else:
             try:
-                repo = Repo.clone_from(self.remote_url, repo_src_path, bare=True, depth=1)
+                repo = Repo.clone_from(
+                    self.remote_url, repo_src_path, bare=True, depth=1
+                )
             except GitCommandError as e:
                 LOGGER.error("Cloning repo '%s' failed: %s" % (self.repo_name, e))
 
@@ -72,13 +75,13 @@ class GitRepository(Repository):
 
     def list_directory(self, directory_path):
         LOGGER.debug("Listing contents of '%s' directory", directory_path)
-        command = ['git', 'ls-tree', '--name-only', DEFAULT_BRANCH]
+        command = ["git", "ls-tree", "--name-only", DEFAULT_BRANCH]
         # git ls-tree uses the root of the repository automatically, if no path is provided
         # If we provide '/' instead, it will fail.
-        if directory_path != '/':
+        if directory_path != "/":
             # We must ensure that the path ends with a slash if we want to get
             # the directory contents
-            if not directory_path.endswith('/'):
+            if not directory_path.endswith("/"):
                 directory_path = "{}/".format(directory_path)
             command.append(directory_path)
 
@@ -103,6 +106,7 @@ class GitRepository(Repository):
 
     @property
     def url(self):
+        # TODO Implement
         return self.remote_url
 
     @property
@@ -116,8 +120,7 @@ class GitRepository(Repository):
 
 
 class FileContent:
+    """Minimalistic class that provides the same API as GitHub's Contents class."""
 
     def __init__(self, path):
         self.path = path
-
-
