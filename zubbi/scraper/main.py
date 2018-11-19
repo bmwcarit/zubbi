@@ -37,6 +37,7 @@ from zubbi.models import (
     ZuulJob,
     ZuulTenant,
 )
+from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.github import GitHubConnection
 from zubbi.scraper.exceptions import ScraperConfigurationError
 from zubbi.scraper.repo_parser import RepoParser
@@ -47,6 +48,10 @@ from zubbi.scraper.tenant_parser import TenantParser
 
 LOGGER = logging.getLogger(__name__)
 
+DRIVERS = {
+    'github': GitHubConnection,
+    'gerrit': GerritConnection,
+}
 RepoItem = namedtuple("RepoItem", "name scraped provider")
 
 
@@ -254,10 +259,6 @@ def scrape(ctx, full, repo):
 
 
 def init_connections(config):
-    # Initialize global GitHub connection for GitHub App
-    gh_con = GitHubConnection(config)
-    gh_con.onLoad()
-
     # Initialize Elasticsearch connection
     init_elasticsearch_con(
         config["ES_HOST"],
@@ -266,9 +267,21 @@ def init_connections(config):
         config.get("ES_PORT"),
     )
 
+    connections = {}
+
+    for driver_name, driver_data in config["DRIVERS"].items():
+        # Look up the driver type and initialize it with the remaining config keys
+        driver_class = DRIVERS.get(driver_data.pop('type'))
+        driver = driver_class(**driver_data)
+        connections[driver_name] = driver
+
+    # Initialize global GitHub connection for GitHub App
+    # gh_con = GitHubConnection(config)
+    # gh_con.onLoad()
+
     # NOTE (fschmidt): We could use this one to store e.g. the Gerrit connection
     # also in here
-    connections = {"github": gh_con}
+    # connections = {"github": gh_con}
     return connections
 
 

@@ -26,11 +26,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class GitHubConnection:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, url, app_id, app_key):
 
-        self.base_url = urljoin(self.config["GITHUB_URL"], "api/v3")
-        self.graphql_url = urljoin(self.config["GITHUB_URL"], "api/graphql")
+        self.base_url = url
+        self.api_url = urljoin(url, "api/v3")
+        self.graphql_url = urljoin(url, "api/graphql")
 
         self.app_id = None
         self.app_key = None
@@ -38,14 +38,11 @@ class GitHubConnection:
         self.installation_map = {}
         self.installation_token_cache = {}
 
-    def onLoad(self):
-        LOGGER.debug("Authenticating against GitHub")
-        self._authenticate()
+        # Initialize the connection
+        self._authenticate(app_id, app_key)
         self._prime_install_map()
 
-    def _authenticate(self):
-        app_id = self.config.get("GITHUB_APP_ID")
-        app_key_file = self.config.get("GITHUB_APP_KEY")
+    def _authenticate(self, app_id, app_key_file):
         try:
             with open(app_key_file, "r") as f:
                 app_key = f.read()
@@ -63,7 +60,7 @@ class GitHubConnection:
         self.app_key = app_key
 
     def _get_app_auth_headers(self):
-        """Set the correctt auth headers to authenticate against GitHub."""
+        """Set the correct auth headers to authenticate against GitHub."""
         now = datetime.now(timezone.utc)
         expiry = now + timedelta(minutes=5)
 
@@ -106,7 +103,7 @@ class GitHubConnection:
             LOGGER.debug("Requesting new token for installation %s", installation_id)
             headers = self._get_app_auth_headers()
             url = "{}/installations/{}/access_tokens".format(
-                self.base_url, installation_id
+                self.api_url, installation_id
             )
 
             json_data = {"user_id": user_id} if user_id else None
@@ -131,7 +128,7 @@ class GitHubConnection:
 
     def _prime_install_map(self):
         """Fetch all installations and look up the ID for each."""
-        url = "{}/app/installations".format(self.base_url)
+        url = "{}/app/installations".format(self.api_url)
         headers = self._get_app_auth_headers()
         LOGGER.debug("Fetching installations for GitHub app")
 
@@ -148,7 +145,7 @@ class GitHubConnection:
                 "Authorization": "token {}".format(token),
             }
 
-            url = "{}/installation/repositories?per_page=100".format(self.base_url)
+            url = "{}/installation/repositories?per_page=100".format(self.api_url)
             while url:
                 LOGGER.debug("Fetching repos for installation %s", install_id)
                 response = requests.get(url, headers=headers)
