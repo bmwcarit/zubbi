@@ -40,6 +40,7 @@ from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.github import GitHubConnection
 from zubbi.scraper.exceptions import ScraperConfigurationError
 from zubbi.scraper.repo_parser import RepoParser
+from zubbi.scraper.repos.gerrit import GerritRepository
 from zubbi.scraper.repos.github import GitHubRepository
 from zubbi.scraper.scraper import Scraper
 from zubbi.scraper.tenant_parser import TenantParser
@@ -48,6 +49,7 @@ from zubbi.scraper.tenant_parser import TenantParser
 LOGGER = logging.getLogger(__name__)
 
 DRIVERS = {"github": GitHubConnection, "gerrit": GerritConnection}
+REPOS = {"github": GitHubRepository, "gerrit": GerritRepository}
 RepoItem = namedtuple("RepoItem", "name scraped provider")
 
 
@@ -71,24 +73,22 @@ def configure_logger(verbosity):
     LOGGER.addHandler(console_handler)
 
 
-# TODO (fschmidt): Move this method to the GitHubConnection class as it already
-# has all the necessary parameters.
-
-
 def update_tenant_configuration(
-    tenant_sources_repo, tenant_sources_file, github_url, connections, scrape_time
+    tenant_sources_repo, tenant_sources_file, connections, scrape_time
 ):
     if tenant_sources_repo:
-        gh_con = connections.get("github")
-        if not gh_con:
+        # Config entry must be in format <driver>:<repo>
+        driver_name, repo_name = tenant_sources_repo.split(":", 1)
+        con = connections.get(driver_name)
+        repo_class = REPOS.get(driver_name)
+        if not con or not repo_class:
             raise ScraperConfigurationError(
-                "Cannot load tenant sources from repo '{}'. No access.".format(
-                    tenant_sources_repo
-                )
+                "Cannot load tenant sources from repo '{}'. Specified driver '{}' "
+                "is not available".format(repo_name, driver_name)
             )
 
-        gh_repo = GitHubRepository(tenant_sources_repo, gh_con)
-        tenant_parser = TenantParser(sources_repo=gh_repo, scrape_time=scrape_time)
+        repo = repo_class(repo_name, con)
+        tenant_parser = TenantParser(sources_repo=repo, scrape_time=scrape_time)
     else:
         tenant_parser = TenantParser(
             sources_file=tenant_sources_file, scrape_time=scrape_time
@@ -314,7 +314,6 @@ def scrape_repo_list(
     scrape_time = datetime.now(timezone.utc)
     tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
     tenant_sources_file = config.get("TENANT_SOURCES_FILE")
-    github_url = config.get("GITHUB_URL")
     gh_con = connections["github"]
 
     LOGGER.info(
@@ -339,11 +338,7 @@ def scrape_repo_list(
 
         # Update tenant sources
         repo_map, tenant_list = update_tenant_configuration(
-            tenant_sources_repo,
-            tenant_sources_file,
-            github_url,
-            connections,
-            scrape_time,
+            tenant_sources_repo, tenant_sources_file, connections, scrape_time
         )
 
         # First, store the tenants in Elasticsearch
