@@ -16,6 +16,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 
+import github3
 import jwt
 import requests
 
@@ -164,6 +165,20 @@ class GitHubConnection:
 
                 # Check if we need to do further page calls
                 url = response.links.get("next", {}).get("url")
+
+    def create_github_client(self, project):
+        """Create a github3 client per repo/installation."""
+        token = self._get_installation_key(project=project)
+        if not token:
+            LOGGER.warning(
+                "Could not find an authentication token for '%s'. Do you "
+                "have access to this repository?",
+                project,
+            )
+            return
+        gh = github3.GitHubEnterprise(self.base_url)
+        gh.login(token=token)
+        return gh
 
     @property
     def repos(self):
