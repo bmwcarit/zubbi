@@ -40,39 +40,38 @@ class TenantParser:
 
     def parse(self):
         for tenant_src in self.sources:
-            source = tenant_src["tenant"]["source"]
+            sources = tenant_src["tenant"]["source"]
             tenant_name = tenant_src["tenant"]["name"]
-            github_source = source.get("github")
-            if not github_source:
-                LOGGER.debug("No key 'github' found in source, skipping ...")
-                break
 
+            # Build the tenant data for Elasticsearch
             uuid = hashlib.sha1(str.encode(tenant_name)).hexdigest()
             tenant = ZuulTenant(meta={"id": uuid})
             tenant.tenant_name = tenant_name
             tenant.scrape_time = self.scrape_time
 
-            # project_type is config- or untrusted-project
-            for project_type, projects in github_source.items():
-                for project in projects:
-                    self._update_repo_map(project, tenant_name)
+            # Iterate over all repositories specified in this tenant (per provider)
+            for provider, source in sources.items():
+                # project_type is config- or untrusted-project
+                for project_type, projects in source.items():
+                    for project in projects:
+                        self._update_repo_map(project, provider, tenant_name)
 
             self.tenants.append(tenant)
 
         return self.repo_map, self.tenants
 
-    def _update_repo_map(self, project, tenant):
+    def _update_repo_map(self, project, provider, tenant):
         project_name, exclude = self._extract_project(project)
 
         # Map the current tenant to the current repository
         repo_tenant_entry = self.repo_map.setdefault(
-            project_name, {"jobs": [], "roles": []}
+            project_name, {"tenants": {"jobs": [], "roles": []}, "provider": provider}
         )
 
         # Update repo_tenant mapping
         if "jobs" not in exclude:
-            repo_tenant_entry["jobs"].append(tenant)
-        repo_tenant_entry["roles"].append(tenant)
+            repo_tenant_entry["tenants"]["jobs"].append(tenant)
+        repo_tenant_entry["tenants"]["roles"].append(tenant)
 
     def _extract_project(self, project):
         project_name = project
