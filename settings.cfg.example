@@ -5,8 +5,16 @@ ES_USER = 'user'
 ES_PASSWORD = 'password'
 
 # Scraper configuration
-GITHUB_APP_ID = 0
-GITHUB_APP_KEY = '<path_to_keyfile>'
+CONNECTIONS = {
+    # This name must go in hand with the provider in the tenant sources file
+    '<name>': {
+        'provider': 'github',
+        'url': 'https://github.com',
+        'app_id': 0,
+        'app_key': '<path_to_keyfile>',
+    }
+}
+
 GITHUB_WEBHOOK_SECRET = '<secret>'
 # NOTE: Use only one of the following, not both
 TENANT_SOURCES_REPO = '<orga>/<repo>'
