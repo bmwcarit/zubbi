@@ -107,6 +107,9 @@ def _initialize_repo_cache(connections):
     # provider in the cached_repo
     gh_con = connections["github"]
 
+    # TODO (fschmidt): Use the tenant sources as base for the repo cache,
+    # not the github connection
+
     # Get all repos from Elasticsearch
     for hit in GitRepo.search().query("match_all").scan():
         # Add 'github' type if they are listed in our github connection
@@ -295,6 +298,8 @@ def scrape_outdated(config, connections, repo_cache):
 
 
 def scrape_full(config, connections, repos=None):
+    # TODO (fschmidt): Use the tenant sources as base for the repo cache,
+    # not the github connection
     gh_con = connections["github"]
     if repos is None:
         repos = list(gh_con.repos)
@@ -352,35 +357,38 @@ def scrape_repo_list(
         for repo_name in repo_list:
             # Get the tenants from the repo map. If we get no tenants, we assume
             # that the repo is not part of the tenant config.
-            tenants = repo_map.get(repo_name, None)
-            if tenants is None:
+            repo_data = repo_map.get(repo_name, None)
+            if repo_data is None:
                 LOGGER.warning(
                     "Repo '%s' is not part of our tenant sources. Skip scraping.",
                     repo_name,
                 )
                 continue
 
+            # Extract the data from the repo_data
+            tenants = repo_data["tenants"]
+            provider = repo_data["provider"]
+
             # Build the data for the repo itself to be stored in Elasticsearch
             uuid = hashlib.sha1(str.encode(repo_name)).hexdigest()
             repo = GitRepo(meta={"id": uuid})
             repo.repo_name = repo_name
             repo.scrape_time = scrape_time
+            repo.provider = provider
             es_repos.append(repo)
 
-            cached_repo = repo_cache.setdefault(
-                repo_name,
-                {
-                    # As we are in a GitHub event, we can just assume, the provider
-                    # is github
-                    "provider": "github"
-                },
-            )
+            cached_repo = repo_cache.setdefault(repo_name, repo_data)
 
             # Update the scrape time in cache
             cached_repo["scrape_time"] = scrape_time
 
+            # Initialize the repository for scraping
+            con = connections.get(provider)
+            repo_class = REPOS.get(provider)
+            repo = repo_class(repo_name, con)
+
             # scrape the repo if is part of the tenant config
-            scrape_repo(repo_name, tenants, gh_con, scrape_time)
+            scrape_repo(repo, tenants, scrape_time)
 
         # Store the information for all repos we just scraped in Elasticsearch
         LOGGER.debug("Updating %d repo definitions in Elasticsearch", len(es_repos))
@@ -406,17 +414,16 @@ def scrape_repo_list(
     )
 
 
-def scrape_repo(repo_name, tenants, gh_con, scrape_time):
+def scrape_repo(repo, tenants, scrape_time):
     # TODO (fschmidt): How to check for the following error with the new structure?
     #    if not gh:
     #        LOGGER.warning("Skipping GitHub repo '%s'", repo_name)
     #        return
 
-    gh_repo = GitHubRepository(repo_name, gh_con)
-    job_files, role_files = Scraper(gh_repo).scrape()
+    job_files, role_files = Scraper(repo).scrape()
 
     jobs, roles = RepoParser(
-        gh_repo, tenants, job_files, role_files, scrape_time
+        repo, tenants, job_files, role_files, scrape_time
     ).parse()
 
     LOGGER.debug("Updating %d job definitions in Elasticsearch", len(jobs))
