@@ -48,7 +48,7 @@ from zubbi.scraper.tenant_parser import TenantParser
 
 LOGGER = logging.getLogger(__name__)
 
-DRIVERS = {"github": GitHubConnection, "gerrit": GerritConnection}
+CONNECTIONS = {"github": GitHubConnection, "gerrit": GerritConnection}
 REPOS = {"github": GitHubRepository, "gerrit": GerritRepository}
 RepoItem = namedtuple("RepoItem", "name scraped provider")
 
@@ -77,14 +77,14 @@ def update_tenant_configuration(
     tenant_sources_repo, tenant_sources_file, connections, scrape_time
 ):
     if tenant_sources_repo:
-        # Config entry must be in format <driver>:<repo>
-        driver_name, repo_name = tenant_sources_repo.split(":", 1)
-        con = connections.get(driver_name)
-        repo_class = REPOS.get(driver_name)
+        # Config entry must be in format <connection_name>:<repo>
+        con_name, repo_name = tenant_sources_repo.split(":", 1)
+        con = connections.get(con_name)
+        repo_class = REPOS.get(con_name)
         if not con or not repo_class:
             raise ScraperConfigurationError(
-                "Cannot load tenant sources from repo '{}'. Specified driver '{}' "
-                "is not available".format(repo_name, driver_name)
+                "Cannot load tenant sources from repo '{}'. Specified connection '{}' "
+                "is not available".format(repo_name, con_name)
             )
 
         repo = repo_class(repo_name, con)
@@ -254,20 +254,14 @@ def init_connections(config):
     )
 
     connections = {}
-
-    for driver_name, driver_data in config["DRIVERS"].items():
-        # Look up the driver type and initialize it with the remaining config keys
-        driver_class = DRIVERS.get(driver_data.pop("type"))
-        driver = driver_class(**driver_data)
-        connections[driver_name] = driver
-
-    # Initialize global GitHub connection for GitHub App
-    # gh_con = GitHubConnection(config)
-    # gh_con.onLoad()
-
-    # NOTE (fschmidt): We could use this one to store e.g. the Gerrit connection
-    # also in here
-    # connections = {"github": gh_con}
+    for con_name, con_data in config["CONNECTIONS"].items():
+        # Look up the connection provider and initialize it with the remaining
+        # config keys. Abstraction for e.g. the following:
+        # gh_con = GitHubConnection(**con_data)
+        # connections['github'] = gh_con
+        con_class = CONNECTIONS.get(con_data.pop("provider"))
+        con = con_class(**con_data)
+        connections[con_name] = con
     return connections
 
 
@@ -422,9 +416,7 @@ def scrape_repo(repo, tenants, scrape_time):
 
     job_files, role_files = Scraper(repo).scrape()
 
-    jobs, roles = RepoParser(
-        repo, tenants, job_files, role_files, scrape_time
-    ).parse()
+    jobs, roles = RepoParser(repo, tenants, job_files, role_files, scrape_time).parse()
 
     LOGGER.debug("Updating %d job definitions in Elasticsearch", len(jobs))
     ZuulJob.bulk_save(jobs)

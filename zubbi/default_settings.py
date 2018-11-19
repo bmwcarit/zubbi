@@ -14,4 +14,3 @@
 
 SEARCH_BATCH_SIZE = 9
 SEARCH_BATCH_LIMIT = 30
-GITHUB_URL = "https://github.com"
