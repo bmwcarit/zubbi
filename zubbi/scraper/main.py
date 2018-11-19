@@ -21,7 +21,6 @@ from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 
 import click
-import github3
 import zmq
 from elasticsearch.exceptions import ConflictError
 from elasticsearch_dsl import Q
@@ -48,10 +47,7 @@ from zubbi.scraper.tenant_parser import TenantParser
 
 LOGGER = logging.getLogger(__name__)
 
-DRIVERS = {
-    'github': GitHubConnection,
-    'gerrit': GerritConnection,
-}
+DRIVERS = {"github": GitHubConnection, "gerrit": GerritConnection}
 RepoItem = namedtuple("RepoItem", "name scraped provider")
 
 
@@ -77,34 +73,21 @@ def configure_logger(verbosity):
 
 # TODO (fschmidt): Move this method to the GitHubConnection class as it already
 # has all the necessary parameters.
-def _create_github_client(github_url, gh_con, project):
-    """Create a github3 client per repo/installation."""
-    token = gh_con._get_installation_key(project=project)
-    if not token:
-        LOGGER.warning(
-            "Could not find an authentication token for '%s'. Do you "
-            "have access to this repository?",
-            project,
-        )
-        return
-    gh = github3.GitHubEnterprise(github_url)
-    gh.login(token=token)
-    return gh
 
 
 def update_tenant_configuration(
-    tenant_sources_repo, tenant_sources_file, github_url, gh_con, scrape_time
+    tenant_sources_repo, tenant_sources_file, github_url, connections, scrape_time
 ):
     if tenant_sources_repo:
-        gh = _create_github_client(github_url, gh_con, tenant_sources_repo)
-        if not gh:
+        gh_con = connections.get("github")
+        if not gh_con:
             raise ScraperConfigurationError(
                 "Cannot load tenant sources from repo '{}'. No access.".format(
                     tenant_sources_repo
                 )
             )
 
-        gh_repo = GitHubRepository(tenant_sources_repo, gh)
+        gh_repo = GitHubRepository(tenant_sources_repo, gh_con)
         tenant_parser = TenantParser(sources_repo=gh_repo, scrape_time=scrape_time)
     else:
         tenant_parser = TenantParser(
@@ -271,7 +254,7 @@ def init_connections(config):
 
     for driver_name, driver_data in config["DRIVERS"].items():
         # Look up the driver type and initialize it with the remaining config keys
-        driver_class = DRIVERS.get(driver_data.pop('type'))
+        driver_class = DRIVERS.get(driver_data.pop("type"))
         driver = driver_class(**driver_data)
         connections[driver_name] = driver
 
@@ -356,7 +339,11 @@ def scrape_repo_list(
 
         # Update tenant sources
         repo_map, tenant_list = update_tenant_configuration(
-            tenant_sources_repo, tenant_sources_file, github_url, gh_con, scrape_time
+            tenant_sources_repo,
+            tenant_sources_file,
+            github_url,
+            connections,
+            scrape_time,
         )
 
         # First, store the tenants in Elasticsearch
@@ -398,7 +385,7 @@ def scrape_repo_list(
             cached_repo["scrape_time"] = scrape_time
 
             # scrape the repo if is part of the tenant config
-            scrape_repo(repo_name, tenants, github_url, gh_con, scrape_time)
+            scrape_repo(repo_name, tenants, gh_con, scrape_time)
 
         # Store the information for all repos we just scraped in Elasticsearch
         LOGGER.debug("Updating %d repo definitions in Elasticsearch", len(es_repos))
@@ -424,13 +411,13 @@ def scrape_repo_list(
     )
 
 
-def scrape_repo(repo_name, tenants, github_url, gh_con, scrape_time):
-    gh = _create_github_client(github_url, gh_con, repo_name)
-    if not gh:
-        LOGGER.warning("Skipping GitHub repo '%s'", repo_name)
-        return
+def scrape_repo(repo_name, tenants, gh_con, scrape_time):
+    # TODO (fschmidt): How to check for the following error with the new structure?
+    #    if not gh:
+    #        LOGGER.warning("Skipping GitHub repo '%s'", repo_name)
+    #        return
 
-    gh_repo = GitHubRepository(repo_name, gh, gh_con)
+    gh_repo = GitHubRepository(repo_name, gh_con)
     job_files, role_files = Scraper(gh_repo).scrape()
 
     jobs, roles = RepoParser(

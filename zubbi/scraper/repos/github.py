@@ -48,9 +48,8 @@ query($owner:String!, $repo:String!, $path:String!) {
 
 
 class GitHubRepository(Repository):
-    def __init__(self, repo_name, gh, gh_con=None):
+    def __init__(self, repo_name, gh_con):
         self.repo_name = repo_name
-        self.gh = gh
         self.gh_con = gh_con
         self._repo = self._get_repo_object()
 
@@ -138,7 +137,9 @@ class GitHubRepository(Repository):
 
     def _get_repo_object(self):
         owner, repo_name = self.repo_name.split("/")
-        repo = self.gh.repository(owner=owner, repository=repo_name)
+        repo = self.gh_con.create_github_client(self.repo_name).repository(
+            owner=owner, repository=repo_name
+        )
         return repo
 
     def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
