@@ -73,9 +73,7 @@ def configure_logger(verbosity):
     LOGGER.addHandler(console_handler)
 
 
-def update_tenant_configuration(
-    tenant_sources_repo, tenant_sources_file, connections, scrape_time
-):
+def _initialize_tenant_parser(tenant_sources_repo, tenant_sources_file, connections):
     if tenant_sources_repo:
         # Config entry must be in format <connection_name>:<repo>
         con_name, repo_name = tenant_sources_repo.split(":", 1)
@@ -88,13 +86,12 @@ def update_tenant_configuration(
             )
 
         repo = repo_class(repo_name, con)
-        tenant_parser = TenantParser(sources_repo=repo, scrape_time=scrape_time)
+        tenant_parser = TenantParser(sources_repo=repo)
     else:
-        tenant_parser = TenantParser(
-            sources_file=tenant_sources_file, scrape_time=scrape_time
-        )
+        tenant_parser = TenantParser(sources_file=tenant_sources_file)
 
-    return tenant_parser.parse()
+    tenant_parser.parse()
+    return tenant_parser
 
 
 def _initialize_repo_cache(connections):
@@ -140,11 +137,40 @@ def _initialize_repo_cache(connections):
 def main(ctx, verbosity):
     configure_logger(verbosity)
 
+    # Load the configurations from file
     config = Config(root_path=".")
     config.from_object(default_settings)
     config.from_envvar(ZUBBI_SETTINGS_ENV)
 
-    ctx.obj = {"config": config}
+    # Validate the configuration
+    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
+    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
+    # Fail if both are set or none of both is set
+    if (
+        not tenant_sources_file
+        and not tenant_sources_repo
+        or (tenant_sources_file and tenant_sources_repo)
+    ):
+        raise ScraperConfigurationError(
+            "Either one of 'TENANT_SOURCES_REPO' "
+            "and 'TENANT_SOURCES_FILE' must be set, "
+            "but not both."
+        )
+
+    # Initialize objects that are needed by all subcommands
+    connections = init_connections(config)
+    repo_cache = _initialize_repo_cache(connections)
+    tenant_parser = _initialize_tenant_parser(
+        tenant_sources_repo, tenant_sources_file, connections
+    )
+
+    # Store everything in click's context object to be available for subcommands
+    ctx.obj = {
+        "config": config,
+        "connections": connections,
+        "repo_cache": repo_cache,
+        "tenant_parser": tenant_parser,
+    }
 
     if ctx.invoked_subcommand is None:
         ctx.invoke(scrape)
@@ -154,10 +180,8 @@ def main(ctx, verbosity):
 @click.pass_context
 def list_repos(ctx):
     repos = []
-    config = ctx.obj["config"]
-
-    connections = init_connections(config)
-    repo_cache = _initialize_repo_cache(connections)
+    # TODO (fschmidt): The repo_cache won't work after the refactoring
+    repo_cache = ctx.obj["repo_cache"]
 
     # Flatten the repo dict and format the scrape_time for console output
     for key, val in repo_cache.items():
@@ -188,32 +212,17 @@ def list_repos(ctx):
 @click.option("--repo", "-r", help="Scrape only the specified repo", multiple=True)
 @click.pass_context
 def scrape(ctx, full, repo):
-
     LOGGER.info("Hello, Zubbi!")
+
     config = ctx.obj["config"]
-
-    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
-    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
-
-    # Fail if both are set or none of both is set
-    if (
-        not tenant_sources_file
-        and not tenant_sources_repo
-        or (tenant_sources_file and tenant_sources_repo)
-    ):
-        raise ScraperConfigurationError(
-            "Either one of 'TENANT_SOURCES_REPO' "
-            "and 'TENANT_SOURCES_FILE' must be set, "
-            "but not both."
-        )
-
-    connections = init_connections(config)
-    repo_cache = _initialize_repo_cache(connections)
+    connections = ctx.obj["connections"]
+    repo_cache = ctx.obj["repo_cache"]
+    tenant_parser = ctx.obj["tenant_parser"]
 
     if full:
-        scrape_full(config, connections)
+        scrape_full(connections, tenant_parser)
     elif repo:
-        scrape_full(config, connections, repos=repo)
+        scrape_full(connections, tenant_parser, repos=repo)
     else:
         # Listen to ZMQ messages
         context = zmq.Context()
@@ -232,6 +241,7 @@ def scrape(ctx, full, repo):
                     json.loads(payload.decode("utf-8")),
                     config,
                     connections,
+                    tenant_parser,
                     repo_cache,
                 )
             except zmq.error.Again:
@@ -241,7 +251,7 @@ def scrape(ctx, full, repo):
 
             # Check if a periodic run is necessary
             LOGGER.debug("Checking for outdated repos")
-            scrape_outdated(config, connections, repo_cache)
+            scrape_outdated(config, connections, tenant_parser, repo_cache)
 
 
 def init_connections(config):
@@ -265,7 +275,7 @@ def init_connections(config):
     return connections
 
 
-def scrape_outdated(config, connections, repo_cache):
+def scrape_outdated(config, connections, tenant_parser, repo_cache):
     scrape_interval = config["FORCE_SCRAPE_INTERVAL"]
     repo_list = []
     now = datetime.now(timezone.utc)
@@ -282,7 +292,7 @@ def scrape_outdated(config, connections, repo_cache):
             scrape_interval,
             repo_list,
         )
-        scrape_repo_list(repo_list, config, connections, repo_cache)
+        scrape_repo_list(repo_list, connections, tenant_parser, repo_cache=repo_cache)
     else:
         LOGGER.info(
             "Found no repos which weren't scraped for %d hours: %s",
@@ -291,39 +301,79 @@ def scrape_outdated(config, connections, repo_cache):
         )
 
 
-def scrape_full(config, connections, repos=None):
-    # TODO (fschmidt): Use the tenant sources as base for the repo cache,
-    # not the github connection
-    gh_con = connections["github"]
+def scrape_full(connections, tenant_parser, repos=None):
     if repos is None:
-        repos = list(gh_con.repos)
-    # TODO (fschmidt): Instead of a simple string list, we should provide
-    # the whole repo_cache entry containing also the provider info
-    # (github, gerrit) to simplify the finding of the correct connection
-    scrape_repo_list(repos, config, connections)
+        # If we don't have any repos provided, we get all available once from the
+        # tenant configuration
+        tenant_parser.parse()
+        repo_map = tenant_parser.repo_map
+        _scrape_repo_map(
+            repo_map, connections, tenant_parser, repo_cache=None, delete_only=False
+        )
+    else:
+        scrape_repo_list(repos, connections, tenant_parser)
 
 
 def scrape_repo_list(
-    repo_list, config, connections, repo_cache=None, delete_only=False
+    repo_list, connections, tenant_parser, repo_cache=None, delete_only=False
 ):
+    # Get the relevant repositories from the tenant parser's repo map.
+    # Repos which are not part of them won't be scraped.
+
+    scrape_time = datetime.now(timezone.utc)
+
     # Simplify the usage of a non-existing repo cache
     if repo_cache is None:
         repo_cache = {}
 
-    scrape_time = datetime.now(timezone.utc)
-    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
-    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
-    gh_con = connections["github"]
+    repo_map = tenant_parser.repo_map
+    tenant_list = tenant_parser.tenants
+    filtered_repo_map = {}
+    for repo_name in repo_list:
+        # Get the tenants from the repo map. If we get no tenants, we assume
+        # that the repo is not part of the tenant config.
+        repo_data = repo_map.get(repo_name, None)
+        if repo_data is None:
+            LOGGER.warning(
+                "Repo '%s' is not part of our tenant sources. Skip scraping.", repo_name
+            )
+            continue
+        # TODO Simplify this with dict/list comprehension
+        filtered_repo_map[repo_name] = repo_data
+
+    return _scrape_repo_map(
+        filtered_repo_map,
+        tenant_list,
+        connections,
+        scrape_time,
+        repo_cache,
+        delete_only,
+    )
+
+
+def _scrape_repo_map(
+    repo_map, tenants, connections, scrape_time, repo_cache, delete_only
+):
+    # TODO It would be great if the tenant_list contains only the relevant tenants based
+    # on the repository map (or whatever is the correct source). In other words:
+    # It should only contain the tenants which are really "updated".
+
+    tenant_list = []
+    for tenant_name in tenants:
+        # Build the tenant data for Elasticsearch
+        uuid = hashlib.sha1(str.encode(tenant_name)).hexdigest()
+        tenant = ZuulTenant(meta={"id": uuid})
+        tenant.tenant_name = tenant_name
+        tenant.scrape_time = scrape_time
+        tenant_list.append(tenant)
+
+    # Simplify the list of repos for log output and keyword match in Elasticsearch
+    # NOTE (fschmidt): Elasticsearch can only work with lists
+    repo_list = list(repo_map.keys())
 
     LOGGER.info(
         "Using scraping time: %s", datetime.strftime(scrape_time, "%Y-%m-%dT%H:%M:%SZ")
     )
-
-    # TODO (fschmidt): This should only be done once during initialization
-    # and when a repo or installation changed
-
-    # Update the installation map
-    gh_con._prime_install_map()
 
     if not delete_only:
         # TODO (fschmidt): This should only be done once during initialization,
@@ -336,9 +386,6 @@ def scrape_repo_list(
         # the tenant configuration in the push event.
 
         # Update tenant sources
-        repo_map, tenant_list = update_tenant_configuration(
-            tenant_sources_repo, tenant_sources_file, connections, scrape_time
-        )
 
         # First, store the tenants in Elasticsearch
         LOGGER.debug(
@@ -348,17 +395,8 @@ def scrape_repo_list(
 
         LOGGER.info("Scraping the following repositories: %s", repo_list)
         es_repos = []
-        for repo_name in repo_list:
-            # Get the tenants from the repo map. If we get no tenants, we assume
-            # that the repo is not part of the tenant config.
-            repo_data = repo_map.get(repo_name, None)
-            if repo_data is None:
-                LOGGER.warning(
-                    "Repo '%s' is not part of our tenant sources. Skip scraping.",
-                    repo_name,
-                )
-                continue
 
+        for repo_name, repo_data in repo_map.items():
             # Extract the data from the repo_data
             tenants = repo_data["tenants"]
             provider = repo_data["provider"]
@@ -446,7 +484,7 @@ def delete_outdated(scrape_time, indices, extra_filter=None):
 # TODO (fschmidt): Maybe it's worth to move the event_* methods to a GitHubEventHandler
 # class or similar. This way, we could encapsulate different events in their respective
 # environment (e.g. GitHub, Gerrit, ...)
-def handle_event(event, payload, config, connections, repo_cache):
+def handle_event(event, payload, config, connections, tenant_parser, repo_cache):
     LOGGER.info("Handling event '%s'", event)
     try:
         # TODO (fschmidt): Maybe we should change this file/module to be a class
@@ -463,14 +501,14 @@ def handle_event(event, payload, config, connections, repo_cache):
         # TODO (fschmidt): What about 'repository' events?
         # To get updates for public/private?
         # https://developer.github.com/v3/activity/events/types/#repositoryevent
-        method(payload, config, connections, repo_cache)
+        method(payload, config, connections, tenant_parser, repo_cache)
     except Exception:
         # TODO (fschmidt): Does it make sense to catch an Exception here?
         # Could we catch anything more specific?
         LOGGER.exception("Error while handling event '%s'", event)
 
 
-def event_installation(payload, config, connections, repo_cache):
+def event_installation(payload, config, connections, tenant_parser, repo_cache):
     action = payload.get("action")
     installation_id = payload.get("installation", {}).get("id")
     repositories = payload.get("repositories", [])
@@ -480,7 +518,7 @@ def event_installation(payload, config, connections, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repositories]
         # Scrape them
-        scrape_repo_list(repo_names, config, connections, repo_cache)
+        scrape_repo_list(repo_names, connections, tenant_parser, repo_cache=repo_cache)
 
     if action == "deleted":
         LOGGER.info("Deleting data for installation %d", installation_id)
@@ -503,13 +541,19 @@ def event_installation(payload, config, connections, repo_cache):
             return
         # Delete all data for those repos
         scrape_repo_list(
-            repositories, config, connections, repo_cache, delete_only=True
+            repositories,
+            connections,
+            tenant_parser,
+            repo_cache=repo_cache,
+            delete_only=True,
         )
 
         # TODO (fschmidt): Should we remove them also from the installatino map?
 
 
-def event_installation_repositories(payload, config, connections, repo_cache):
+def event_installation_repositories(
+    payload, config, connections, tenant_parser, repo_cache
+):
     installation_id = payload.get("installation", {}).get("id")
     repos_added = payload.get("repositories_added")
     repos_removed = payload.get("repositories_removed")
@@ -532,7 +576,7 @@ def event_installation_repositories(payload, config, connections, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repos_added]
         # Scrape them
-        scrape_repo_list(repo_names, config, connections, repo_cache)
+        scrape_repo_list(repo_names, connections, tenant_parser, repo_cache=repo_cache)
 
     # Just delete the data for these repos
     if repos_removed is not None:
@@ -544,10 +588,16 @@ def event_installation_repositories(payload, config, connections, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repos_removed]
         # Delete all data for those repos
-        scrape_repo_list(repo_names, config, connections, repo_cache, delete_only=True)
+        scrape_repo_list(
+            repo_names,
+            connections,
+            tenant_parser,
+            repo_cache=repo_cache,
+            delete_only=True,
+        )
 
 
-def event_push(payload, config, connections, repo_cache):
+def event_push(payload, config, connections, tenant_parser, repo_cache):
     repo_name = payload.get("repository", {}).get("full_name")
     # installation_id = payload.get('installation', {}).get('id')
     ref = payload.get("ref")
@@ -578,7 +628,7 @@ def event_push(payload, config, connections, repo_cache):
 
     LOGGER.info("Handling push event for repo %s with ref %s", repo_name, ref)
 
-    scrape_repo_list([repo_name], config, connections, repo_cache)
+    scrape_repo_list([repo_name], connections, tenant_parser, repo_cache=repo_cache)
 
 
 if __name__ == "__main__":

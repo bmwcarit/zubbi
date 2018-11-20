@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime, timezone
 from unittest import mock
 
 from zubbi.scraper.exceptions import CheckoutError
@@ -135,8 +134,6 @@ class MockGitHubRepository(GitHubRepository):
 
 
 def test_scrape():
-    scrape_time = datetime.now(timezone.utc)
-
     expected = {
         "orga1/repo1": (
             {
@@ -203,14 +200,13 @@ def test_scrape():
         "orga2/repo3": ({}, {}),
     }
 
-    repo_map, tenant_list = TenantParser(
-        sources_file="tests/testdata/test.foo.yaml", scrape_time=scrape_time
-    ).parse()
+    tenant_parser = TenantParser(sources_file="tests/testdata/test.foo.yaml")
+    tenant_parser.parse()
 
-    assert tenant_list[0].to_dict() == {
-        "tenant_name": "foo",
-        "scrape_time": scrape_time,
-    }
+    tenant_list = tenant_parser.tenants
+    repo_map = tenant_parser.repo_map
+
+    assert tenant_list[0] == "foo"
     assert len(tenant_list) == 1
 
     for repo, tenants in repo_map.items():
@@ -220,11 +216,18 @@ def test_scrape():
 
 
 def test_scrape_not_github():
-    scrape_time = datetime.now(timezone.utc)
+    tenant_parser = TenantParser(sources_file="tests/testdata/test.bar.yaml")
+    tenant_parser.parse()
 
-    repo_map, tenant_list = TenantParser(
-        sources_file="tests/testdata/test.bar.yaml", scrape_time=scrape_time
-    ).parse()
-    # Empty because of no github sources, only ascent
-    assert len(tenant_list) == 0
-    assert not repo_map
+    expected_repo_map = {
+        "repo1": {"provider": "gerrit", "tenants": {"jobs": ["bar"], "roles": ["bar"]}},
+        "repo2": {"provider": "gerrit", "tenants": {"jobs": ["bar"], "roles": ["bar"]}},
+        "repo3": {"provider": "gerrit", "tenants": {"jobs": ["bar"], "roles": ["bar"]}},
+    }
+
+    tenant_list = tenant_parser.tenants
+    repo_map = tenant_parser.repo_map
+
+    assert tenant_list[0] == "bar"
+    assert len(tenant_list) == 1
+    assert repo_map == expected_repo_map
