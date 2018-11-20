@@ -318,18 +318,22 @@ def scrape_full(connections, tenant_parser, repos=None):
 def scrape_repo_list(
     repo_list, connections, tenant_parser, repo_cache=None, delete_only=False
 ):
-    # Get the relevant repositories from the tenant parser's repo map.
-    # Repos which are not part of them won't be scraped.
-
     scrape_time = datetime.now(timezone.utc)
 
     # Simplify the usage of a non-existing repo cache
     if repo_cache is None:
         repo_cache = {}
 
+    # Update tenant sources
+    # TODO (fschmidt): This should not be necessary for each scraping. But, as we
+    # don't have a mechanism yet to filter for the necessary events, we keep it
+    # like this.
+    tenant_parser.parse()
     repo_map = tenant_parser.repo_map
     tenant_list = tenant_parser.tenants
     filtered_repo_map = {}
+    # Get the relevant repositories from the tenant parser's repo map.
+    # Repos which are not part of them won't be scraped.
     for repo_name in repo_list:
         # Get the tenants from the repo map. If we get no tenants, we assume
         # that the repo is not part of the tenant config.
@@ -341,6 +345,10 @@ def scrape_repo_list(
             continue
         # TODO Simplify this with dict/list comprehension
         filtered_repo_map[repo_name] = repo_data
+
+    if not filtered_repo_map:
+        LOGGER.info("Repo list is empty, nothing to scrape")
+        return
 
     return _scrape_repo_map(
         filtered_repo_map,
