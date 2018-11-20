@@ -271,6 +271,7 @@ def init_connections(config):
         # connections['github'] = gh_con
         con_class = CONNECTIONS.get(con_data.pop("provider"))
         con = con_class(**con_data)
+        con.init()
         connections[con_name] = con
     return connections
 

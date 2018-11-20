@@ -23,15 +23,15 @@ GITHUB_URL = "https://github.example.com"
 GITHUB_API_URL = "{}/api/v3".format(GITHUB_URL)
 
 GITHUB_CON_CONFIG = {
-    "GITHUB_APP_ID": 1,
-    "GITHUB_APP_KEY": "tests/testdata/app_key_file",
-    "GITHUB_URL": GITHUB_URL,
+    "app_id": 1,
+    "app_key": "tests/testdata/app_key_file",
+    "url": GITHUB_URL,
 }
 
 
 def test_get_app_auth_headers():
     # Initialize GitHubConnection
-    gh_con = GitHubConnection(GITHUB_CON_CONFIG)
+    gh_con = GitHubConnection(**GITHUB_CON_CONFIG)
     gh_con._authenticate()
 
     result = gh_con._get_app_auth_headers()
@@ -47,7 +47,7 @@ def test_get_installation_key(
 ):
 
     # Initialize GitHubConnection
-    gh_con = GitHubConnection(GITHUB_CON_CONFIG)
+    gh_con = GitHubConnection(**GITHUB_CON_CONFIG)
     gh_con._authenticate()
 
     with requests_mock.Mocker() as m:
