@@ -101,21 +101,29 @@ class GitRepository(Repository):
         pass
 
     def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
-        # TODO Implement
-        return self.remote_url
+        # NOTE (fschmidt): This does not make sense for plain git repositories.
+        # It should be implemented by more concrete provider implementations like
+        # GitHub or Gerrit.
+        return None
 
     def url_for_directory(self, directory_path):
-        # TODO Implement
-        return self.remote_url
+        # NOTE (fschmidt): This does not make sense for plain git repositories.
+        # It should be implemented by more concrete provider implementations like
+        # GitHub or Gerrit.
+        return None
 
     @property
     def url(self):
-        # TODO Implement
-        return self.remote_url
+        # NOTE (fschmidt): This does not make sense for plain git repositories.
+        # It should be implemented by more concrete provider implementations like
+        # GitHub or Gerrit.
+        return None
 
     @property
     def private(self):
-        # TODO We need to check if gerrit has some concept of private/public repos
+        # NOTE (fschmidt): This does not make sense for plain git repositories.
+        # It should be implemented by more concrete provider implementations like
+        # GitHub or Gerrit.
         return False
 
     @property
