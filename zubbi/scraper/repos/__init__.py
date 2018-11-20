@@ -33,14 +33,22 @@ class Repository(abc.ABC):
         """Get the blame info for this path."""
 
     @abc.abstractmethod
-    def url(self, file_path):
-        """Get the URL to the file."""
+    def url(self):
+        """Get the URL to this repository."""
 
-    @abc.abstractproperty
+    @abc.abstractmethod
+    def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
+        """Get the URL to the file path."""
+
+    @abc.abstractmethod
+    def url_for_directory(self, directory_path):
+        """Get the URL for the given directory path."""
+
+    @abc.abstractmethod
     def private(self):
         """Property indicating if the repository is private."""
 
-    @abc.abstractproperty
+    @abc.abstractmethod
     def name(self):
         """Property for the name of the repository."""
 

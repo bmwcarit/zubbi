@@ -21,7 +21,7 @@ from yaml.constructor import Constructor
 
 from zubbi.doc import render_file, render_sphinx, SphinxBuildError
 from zubbi.models import AnsibleRole, ZuulJob
-from zubbi.utils import last_changed_from_blame_range, urljoin
+from zubbi.utils import last_changed_from_blame_range
 
 
 LOGGER = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class RepoParser:
                 job.last_updated = last_changed_from_blame_range(
                     job.line_start, job.line_end, job_info["blame"]
                 )
-                job.url = self.repo.url_for_path(
+                job.url = self.repo.url_for_file(
                     file_path, job.line_start, job.line_end
                 )
 
@@ -120,7 +120,7 @@ class RepoParser:
             role.repo = self.repo.name
             role.tenants = self.tenants["roles"]
             role.private = self.repo.private
-            role.url = urljoin(self.repo.url, "tree/master/roles", role_name)
+            role.url = self.repo.url_for_directory("roles/{}".format(role_name))
             role.scrape_time = self.scrape_time
             role.last_updated = role_info["last_changed"]
 
