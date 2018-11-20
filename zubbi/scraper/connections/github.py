@@ -33,31 +33,33 @@ class GitHubConnection:
         self.api_url = urljoin(url, "api/v3")
         self.graphql_url = urljoin(url, "api/graphql")
 
-        self.app_id = None
-        self.app_key = None
+        self._app_id = app_id
+        self._app_key = app_key
 
         self.installation_map = {}
         self.installation_token_cache = {}
 
+    def init(self):
         # Initialize the connection
-        self._authenticate(app_id, app_key)
+        self._authenticate()
         self._prime_install_map()
 
-    def _authenticate(self, app_id, app_key_file):
+    def _authenticate(self):
+        LOGGER.debug("Authenticating against GitHub")
         try:
-            with open(app_key_file, "r") as f:
+            with open(self._app_key, "r") as f:
                 app_key = f.read()
         except IOError:
-            LOGGER.error("Failed to open app key file: %s", app_key_file)
+            LOGGER.error("Failed to open app key file: %s", self._app_key)
 
-        if not app_id and app_key:
+        if not self._app_id and app_key:
             LOGGER.error(
                 "You must provide an app_id and an app_key to use "
                 "installation based authentication"
             )
             return
 
-        self.app_id = app_id
+        self.app_id = self._app_id
         self.app_key = app_key
 
     def _get_app_auth_headers(self):
