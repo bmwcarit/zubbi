@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
 import logging
 import os
 
 import yaml
 
-from zubbi.models import ZuulTenant
 from zubbi.scraper.exceptions import CheckoutError, ScraperConfigurationError
 
 
@@ -28,26 +26,31 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TenantParser:
-    def __init__(self, scrape_time, sources_file=None, sources_repo=None):
+    def __init__(self, sources_file=None, sources_repo=None):
+        self.sources = None
+        self.repo_map = {}
+        self.tenants = []
+        # Initial call to load the sources file/repo
+        self.reload_sources(sources_file, sources_repo)
+
+    def reload_sources(self, sources_file=None, sources_repo=None):
         if sources_file:
             self.sources = self._load_tenant_sources_from_file(sources_file)
         else:
             self.sources = self._load_tenant_sources_from_repo(sources_repo)
 
-        self.scrape_time = scrape_time
-        self.repo_map = {}
-        self.tenants = []
+    def update(self, sources_file=None, sources_repo=None):
+        self.reload_sources(sources_file, sources_repo)
+        self.parse()
 
     def parse(self):
+        # Clear repo_map and tenant list first
+        self.repo_map.clear()
+        self.tenants.clear()
+
         for tenant_src in self.sources:
             sources = tenant_src["tenant"]["source"]
             tenant_name = tenant_src["tenant"]["name"]
-
-            # Build the tenant data for Elasticsearch
-            uuid = hashlib.sha1(str.encode(tenant_name)).hexdigest()
-            tenant = ZuulTenant(meta={"id": uuid})
-            tenant.tenant_name = tenant_name
-            tenant.scrape_time = self.scrape_time
 
             # Iterate over all repositories specified in this tenant (per provider)
             for provider, source in sources.items():
@@ -56,9 +59,7 @@ class TenantParser:
                     for project in projects:
                         self._update_repo_map(project, provider, tenant_name)
 
-            self.tenants.append(tenant)
-
-        return self.repo_map, self.tenants
+            self.tenants.append(tenant_name)
 
     def _update_repo_map(self, project, provider, tenant):
         project_name, exclude = self._extract_project(project)

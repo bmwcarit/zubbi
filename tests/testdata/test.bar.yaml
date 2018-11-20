@@ -2,7 +2,7 @@
     exclude-unprotected-branches: true
     name: bar
     source:
-      ascent:
+      gerrit:
         untrusted-projects:
           - repo1
           - repo2
