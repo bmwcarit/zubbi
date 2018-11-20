@@ -548,7 +548,7 @@ def event_installation_repositories(payload, config, connections, repo_cache):
             installation_id,
         )
         # Get list of repos from the payload
-        repo_names = [r["full_name"] for r in repos_added]
+        repo_names = [r["full_name"] for r in repos_removed]
         # Delete all data for those repos
         scrape_repo_list(repo_names, config, connections, repo_cache, delete_only=True)
 
