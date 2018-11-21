@@ -5,13 +5,24 @@ ES_USER = 'user'
 ES_PASSWORD = 'password'
 
 # Scraper configuration
+# NOTE: The connection names must go in hand with the ones used in the tenant
+# configuration
 CONNECTIONS = {
-    # This name must go in hand with the provider in the tenant sources file
+    # GitHub example
     '<name>': {
         'provider': 'github',
         'url': 'https://github.com',
         'app_id': 0,
         'app_key': '<path_to_keyfile>',
+    },
+    # Gerrit example
+    '<name>': {
+        'provider': 'gerrit',
+        'url': '<git_remote_url>',
+        # Only necessary if different from the git_remote_url
+        'web_url': '<gerrit_url>',
+        'user': '<username>',
+        'password': '<password',
     }
 }
 
