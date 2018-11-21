@@ -298,7 +298,6 @@ def scrape_full(connections, tenant_parser, repos=None):
         # tenant configuration
         tenant_parser.parse()
         repo_map = tenant_parser.repo_map
-        print(repo_map)
         tenant_list = tenant_parser.tenants
         scrape_time = datetime.now(timezone.utc)
         _scrape_repo_map(
@@ -406,9 +405,7 @@ def _scrape_repo_map(
         for repo_name, repo_data in repo_map.items():
             # Extract the data from the repo_data
             tenants = repo_data["tenants"]
-            # TODO (felix) Find a better name for this. It's not the provider,
-            # but the connection name
-            provider = repo_data["provider"]
+            connection_name = repo_data["connection_name"]
 
             cached_repo = repo_cache.setdefault(repo_name, repo_data)
 
@@ -416,8 +413,9 @@ def _scrape_repo_map(
             cached_repo["scrape_time"] = scrape_time
 
             # Initialize the repository for scraping
-            con = connections.get(provider)
-            repo_class = REPOS.get(con.name)
+            con = connections.get(connection_name)
+            provider = con.provider
+            repo_class = REPOS.get(provider)
             repo = repo_class(repo_name, con)
 
             # Build the data for the repo itself to be stored in Elasticsearch
@@ -425,7 +423,7 @@ def _scrape_repo_map(
             es_repo = GitRepo(meta={"id": uuid})
             es_repo.repo_name = repo_name
             es_repo.scrape_time = scrape_time
-            es_repo.provider = con.name
+            es_repo.provider = provider
             es_repos.append(es_repo)
 
             # scrape the repo if is part of the tenant config

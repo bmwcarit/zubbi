@@ -220,9 +220,18 @@ def test_scrape_not_github():
     tenant_parser.parse()
 
     expected_repo_map = {
-        "repo1": {"provider": "gerrit", "tenants": {"jobs": ["bar"], "roles": ["bar"]}},
-        "repo2": {"provider": "gerrit", "tenants": {"jobs": ["bar"], "roles": ["bar"]}},
-        "repo3": {"provider": "gerrit", "tenants": {"jobs": ["bar"], "roles": ["bar"]}},
+        "repo1": {
+            "connection_name": "gerrit",
+            "tenants": {"jobs": ["bar"], "roles": ["bar"]},
+        },
+        "repo2": {
+            "connection_name": "gerrit",
+            "tenants": {"jobs": ["bar"], "roles": ["bar"]},
+        },
+        "repo3": {
+            "connection_name": "gerrit",
+            "tenants": {"jobs": ["bar"], "roles": ["bar"]},
+        },
     }
 
     tenant_list = tenant_parser.tenants
