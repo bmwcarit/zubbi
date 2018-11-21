@@ -187,7 +187,7 @@ class GitHubConnection:
         return self.installation_map.keys()
 
     @property
-    def name(self):
+    def provider(self):
         return "github"
 
     def get_repos_for_installation(self, install_id):

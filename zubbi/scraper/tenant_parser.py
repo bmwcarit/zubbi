@@ -53,20 +53,21 @@ class TenantParser:
             tenant_name = tenant_src["tenant"]["name"]
 
             # Iterate over all repositories specified in this tenant (per provider)
-            for provider, source in sources.items():
+            for connection_name, source in sources.items():
                 # project_type is config- or untrusted-project
                 for project_type, projects in source.items():
                     for project in projects:
-                        self._update_repo_map(project, provider, tenant_name)
+                        self._update_repo_map(project, connection_name, tenant_name)
 
             self.tenants.append(tenant_name)
 
-    def _update_repo_map(self, project, provider, tenant):
+    def _update_repo_map(self, project, connection_name, tenant):
         project_name, exclude = self._extract_project(project)
 
         # Map the current tenant to the current repository
         repo_tenant_entry = self.repo_map.setdefault(
-            project_name, {"tenants": {"jobs": [], "roles": []}, "provider": provider}
+            project_name,
+            {"tenants": {"jobs": [], "roles": []}, "connection_name": connection_name},
         )
 
         # Update repo_tenant mapping

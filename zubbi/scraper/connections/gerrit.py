@@ -38,5 +38,5 @@ class GerritConnection:
         return remote_url
 
     @property
-    def name(self):
+    def provider(self):
         return "gerrit"
