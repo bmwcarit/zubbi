@@ -394,7 +394,7 @@ def _scrape_repo_map(
         # Update tenant sources
 
         # First, store the tenants in Elasticsearch
-        LOGGER.debug(
+        LOGGER.info(
             "Updating %d tenant definitions in Elasticsearch", len(tenant_list)
         )
         ZuulTenant.bulk_save(tenant_list)
@@ -430,7 +430,7 @@ def _scrape_repo_map(
             scrape_repo(repo, tenants, scrape_time)
 
         # Store the information for all repos we just scraped in Elasticsearch
-        LOGGER.debug("Updating %d repo definitions in Elasticsearch", len(es_repos))
+        LOGGER.info("Updating %d repo definitions in Elasticsearch", len(es_repos))
         GitRepo.bulk_save(es_repos)
     else:
         LOGGER.info("Deleting the following repositories: %s", repo_list)
@@ -463,10 +463,10 @@ def scrape_repo(repo, tenants, scrape_time):
 
     jobs, roles = RepoParser(repo, tenants, job_files, role_files, scrape_time).parse()
 
-    LOGGER.debug("Updating %d job definitions in Elasticsearch", len(jobs))
+    LOGGER.info("Updating %d job definitions in Elasticsearch", len(jobs))
     ZuulJob.bulk_save(jobs)
 
-    LOGGER.debug("Updating %d role definitions in Elasticsearch", len(roles))
+    LOGGER.info("Updating %d role definitions in Elasticsearch", len(roles))
     AnsibleRole.bulk_save(roles)
 
 
