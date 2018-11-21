@@ -95,7 +95,7 @@ def _initialize_tenant_parser(tenant_sources_repo, tenant_sources_file, connecti
 
 
 def _initialize_repo_cache():
-    """Initializes the repository cache used for scraping.
+    """Initialize the repository cache used for scraping.
 
     Retrieves a list of repositories with their provider and last scraping time
     from Elasticsearch.
@@ -394,9 +394,7 @@ def _scrape_repo_map(
         # Update tenant sources
 
         # First, store the tenants in Elasticsearch
-        LOGGER.info(
-            "Updating %d tenant definitions in Elasticsearch", len(tenant_list)
-        )
+        LOGGER.info("Updating %d tenant definitions in Elasticsearch", len(tenant_list))
         ZuulTenant.bulk_save(tenant_list)
 
         LOGGER.info("Scraping the following repositories: %s", repo_list)

@@ -21,9 +21,19 @@ LOGGER = logging.getLogger(__name__)
 
 
 class GerritConnection:
-    def __init__(self, url, user, password, web_url=None):
+    # TODO (felix): Should we ensure that only the user that started zubbi has access rights
+    # to this workspace directory?
+    def __init__(
+        self, url, user, password, workspace="/tmp/zubbi_working_dir", web_url=None
+    ):
         self.base_url = url
         self.gitweb_url = urljoin(web_url or url, "gitweb")
+
+        # TODO (felix): Not sure if the connection is the right scope for this variable,
+        # but it's the simplest way to configure it - and one could argue, that the
+        # workspace directory is depending on the connection entry in the settings file
+        # (different connection -> different workspace)
+        self.workspace_dir = workspace
 
         # TODO Support password via envvar (like in zapfel)
         self.user = user
