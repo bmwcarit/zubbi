@@ -14,17 +14,22 @@
 
 from zubbi.scraper.repos.git import GitRepository
 
+# TODO (felix): Make this configurable somehow (at least via envvars)
+WORKSPACE_DIR = 'tmp'
+
 
 class GerritRepository(GitRepository):
     # NOTE (fschmidt): As the Gerrit API does not support everything we need,
     # we let the GitRepository do all the checkouts and directory listings
     # and use the gerrit API only for building the URLs which are shown in zubbi.
 
-    def __init__(self, repo_name, workspace_dir, remote_url, gerrit_con):
-        super().__init__(repo_name, workspace_dir, remote_url)
+    def __init__(self, repo_name, gerrit_con):
+        # Build the remote url based on the gerrit connection parameters
+        remote_url = gerrit_con.get_remote_url(repo_name)
         self.gerrit_con = gerrit_con
+        super().__init__(repo_name, WORKSPACE_DIR, remote_url)
 
-    def get_url_for_file(self, file_path, highlight_start=None, highlight_end=None):
+    def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
         file_url = "{}?p={}.git;a=blob;f={}".format(
             self.gerrit_con.gitweb_url, self.repo_name, file_path
         )
@@ -36,7 +41,7 @@ class GerritRepository(GitRepository):
 
         return file_url
 
-    def get_url_for_directory(self, directory_path):
+    def url_for_directory(self, directory_path):
         url = "{}?p={}.git;a=tree;f={}".format(
             self.gerrit_con.gitweb_url, self.repo_name, directory_path
         )

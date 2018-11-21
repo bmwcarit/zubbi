@@ -186,6 +186,10 @@ class GitHubConnection:
     def repos(self):
         return self.installation_map.keys()
 
+    @property
+    def name(self):
+        return "github"
+
     def get_repos_for_installation(self, install_id):
         return [
             k
