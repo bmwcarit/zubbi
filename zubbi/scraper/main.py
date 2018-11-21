@@ -94,34 +94,25 @@ def _initialize_tenant_parser(tenant_sources_repo, tenant_sources_file, connecti
     return tenant_parser
 
 
-def _initialize_repo_cache(connections):
+def _initialize_repo_cache():
+    """Initializes the repository cache used for scraping.
+
+    Retrieves a list of repositories with their provider and last scraping time
+    from Elasticsearch.
+    This list can be used to check which repos need to be scraped (e.g. after
+    a specific amount of time).
+    """
     LOGGER.info("Initializing repository cache")
     # Initialize Repo Cache
     repo_cache = {}
 
-    # TODO (fschmidt): Once we have more providers, this could be done in a
-    # loop, using all listed connections and add the connection's key as
-    # provider in the cached_repo
-    gh_con = connections["github"]
-
-    # TODO (fschmidt): Use the tenant sources as base for the repo cache,
-    # not the github connection
-
     # Get all repos from Elasticsearch
     for hit in GitRepo.search().query("match_all").scan():
-        # Add 'github' type if they are listed in our github connection
-        if hit.repo_name in gh_con.repos:
-            repo_type = "github"
-        else:
-            repo_type = None
         # TODO (fschmidt): Maybe we can use this list as cache for the whole
         # scraper-webhook part.
         # This way, we could reduce the amount of operations needed for GitHub
         # and ElasticSearch
-        repo_cache[hit.repo_name] = {
-            "scrape_time": hit.scrape_time,
-            "provider": repo_type,
-        }
+        repo_cache[hit.repo_name] = hit.to_dict(skip_empty=False)
 
     return repo_cache
 
@@ -159,7 +150,7 @@ def main(ctx, verbosity):
 
     # Initialize objects that are needed by all subcommands
     connections = init_connections(config)
-    repo_cache = _initialize_repo_cache(connections)
+    repo_cache = _initialize_repo_cache()
     tenant_parser = _initialize_tenant_parser(
         tenant_sources_repo, tenant_sources_file, connections
     )
@@ -180,7 +171,6 @@ def main(ctx, verbosity):
 @click.pass_context
 def list_repos(ctx):
     repos = []
-    # TODO (fschmidt): The repo_cache won't work after the refactoring
     repo_cache = ctx.obj["repo_cache"]
 
     # Flatten the repo dict and format the scrape_time for console output
@@ -308,8 +298,14 @@ def scrape_full(connections, tenant_parser, repos=None):
         # tenant configuration
         tenant_parser.parse()
         repo_map = tenant_parser.repo_map
+        scrape_time = datetime.now(timezone.utc)
         _scrape_repo_map(
-            repo_map, connections, tenant_parser, repo_cache=None, delete_only=False
+            repo_map,
+            connections,
+            tenant_parser,
+            scrape_time,
+            repo_cache=None,
+            delete_only=False,
         )
     else:
         scrape_repo_list(repos, connections, tenant_parser)
