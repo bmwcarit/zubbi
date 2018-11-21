@@ -344,7 +344,7 @@ def scrape_repo_list(
         filtered_repo_map[repo_name] = repo_data
 
     if not filtered_repo_map:
-        LOGGER.info("Repo list is empty, nothing to scrape")
+        LOGGER.info("Repo list is empty, nothing to scrape.")
         return
 
     return _scrape_repo_map(
@@ -412,9 +412,26 @@ def _scrape_repo_map(
 
             # Initialize the repository for scraping
             con = connections.get(connection_name)
+            if not con:
+                LOGGER.error(
+                    "Checkout of repo '%s' failed. No connection named '%s' found. "
+                    "Please check your configuration file.",
+                    repo_name,
+                    connection_name,
+                )
+                continue
             provider = con.provider
             repo_class = REPOS.get(provider)
             repo = repo_class(repo_name, con)
+
+            # Check if the repo was created successfully, if not, skip it.
+            # Possible reasons are e.g: No access (via GitHub app or Gerrit user),
+            # Clone/checkout failures for plain git repos or similar.
+            if not repo._repo:
+                LOGGER.error(
+                    "Repo '%s' could not be initialized. Skip scraping.", repo_name
+                )
+                continue
 
             # Build the data for the repo itself to be stored in Elasticsearch
             uuid = hashlib.sha1(str.encode(repo_name)).hexdigest()
@@ -452,11 +469,6 @@ def _scrape_repo_map(
 
 
 def scrape_repo(repo, tenants, scrape_time):
-    # TODO (fschmidt): How to check for the following error with the new structure?
-    #    if not gh:
-    #        LOGGER.warning("Skipping GitHub repo '%s'", repo_name)
-    #        return
-
     job_files, role_files = Scraper(repo).scrape()
 
     jobs, roles = RepoParser(repo, tenants, job_files, role_files, scrape_time).parse()
