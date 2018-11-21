@@ -298,13 +298,15 @@ def scrape_full(connections, tenant_parser, repos=None):
         # tenant configuration
         tenant_parser.parse()
         repo_map = tenant_parser.repo_map
+        print(repo_map)
+        tenant_list = tenant_parser.tenants
         scrape_time = datetime.now(timezone.utc)
         _scrape_repo_map(
             repo_map,
+            tenant_list,
             connections,
-            tenant_parser,
             scrape_time,
-            repo_cache=None,
+            repo_cache={},
             delete_only=False,
         )
     else:
@@ -404,15 +406,9 @@ def _scrape_repo_map(
         for repo_name, repo_data in repo_map.items():
             # Extract the data from the repo_data
             tenants = repo_data["tenants"]
+            # TODO (felix) Find a better name for this. It's not the provider,
+            # but the connection name
             provider = repo_data["provider"]
-
-            # Build the data for the repo itself to be stored in Elasticsearch
-            uuid = hashlib.sha1(str.encode(repo_name)).hexdigest()
-            repo = GitRepo(meta={"id": uuid})
-            repo.repo_name = repo_name
-            repo.scrape_time = scrape_time
-            repo.provider = provider
-            es_repos.append(repo)
 
             cached_repo = repo_cache.setdefault(repo_name, repo_data)
 
@@ -421,8 +417,16 @@ def _scrape_repo_map(
 
             # Initialize the repository for scraping
             con = connections.get(provider)
-            repo_class = REPOS.get(provider)
+            repo_class = REPOS.get(con.name)
             repo = repo_class(repo_name, con)
+
+            # Build the data for the repo itself to be stored in Elasticsearch
+            uuid = hashlib.sha1(str.encode(repo_name)).hexdigest()
+            es_repo = GitRepo(meta={"id": uuid})
+            es_repo.repo_name = repo_name
+            es_repo.scrape_time = scrape_time
+            es_repo.provider = con.name
+            es_repos.append(es_repo)
 
             # scrape the repo if is part of the tenant config
             scrape_repo(repo, tenants, scrape_time)
@@ -527,6 +531,8 @@ def event_installation(payload, config, connections, tenant_parser, repo_cache):
 
     if action == "deleted":
         LOGGER.info("Deleting data for installation %d", installation_id)
+        # TODO (felix) Get the right connection from the configuration based on what?
+        # The provider? The github url? Both?
         gh_con = connections["github"]
         # Get repos for this installation from our GitHubConnection as they are
         # not listed in the payload.
@@ -610,6 +616,8 @@ def event_push(payload, config, connections, tenant_parser, repo_cache):
     # new_ref = payload.get('after')
     # commits = payload.get('commits')
 
+    # TODO (felix) Get the right connection from the configuration based on what?
+    # The provider? The github url? Both?
     gh_con = connections["github"]
 
     repo_info = gh_con.installation_map.get(repo_name)
