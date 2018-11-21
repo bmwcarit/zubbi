@@ -40,7 +40,7 @@ class GitHubConnection:
         self.installation_token_cache = {}
 
     def init(self):
-        # Initialize the connection
+        LOGGER.info("Initializing GitHub connection to %s", self.base_url)
         self._authenticate()
         self._prime_install_map()
 

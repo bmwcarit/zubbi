@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 from zubbi.utils import urljoin
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 class GerritConnection:
@@ -27,8 +32,8 @@ class GerritConnection:
         # TODO If we want to support ssh and https, we should add a protocol parameter
 
     def init(self):
+        LOGGER.info("Initializing Gerrit connection to %s", self.base_url)
         # Currently we don't need to do anything here
-        pass
 
     def get_remote_url(self, repository_name):
         # TODO (felix) Find a better way to rebuild the url with auth values
