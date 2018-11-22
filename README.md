@@ -143,6 +143,24 @@ $ tox
 
 ### Installing & updating dependencies
 
+New dependencies should be added to the `requires` list in the `setup.py` file:
+
+```python
+requires = [
+    "arrow",
+    "click",
+    ...,
+    "<new dependency>",
+]
+```
+
+Afterwards, run the following command update the `Pipfile.lock` and install the
+new dependencies in your local pipenv environment:
+
+```shell
+$ pipenv update
+```
+
 Test dependencies should be installed as development dependencies:
 
 ```shell
