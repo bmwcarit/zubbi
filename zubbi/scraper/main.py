@@ -172,16 +172,22 @@ def main(ctx, verbosity):
 def list_repos(ctx):
     repos = []
     repo_cache = ctx.obj["repo_cache"]
+    tenant_parser = ctx.obj["tenant_parser"]
 
-    # Flatten the repo dict and format the scrape_time for console output
-    for key, val in repo_cache.items():
-        repos.append(
-            RepoItem(
+    for key in tenant_parser.repo_map.keys():
+        # Get the corresponding data from the repo cache, flatten the repo dict
+        # and format the scrape_time for console output.
+        cached_repo = repo_cache.get(key)
+        if cached_repo is not None:
+            list_item = RepoItem(
                 key,
-                datetime.strftime(val["scrape_time"], "%Y-%m-%dT%H:%M:%SZ"),
-                val["provider"],
+                datetime.strftime(cached_repo["scrape_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                cached_repo["provider"],
             )
-        )
+        else:
+            list_item = RepoItem(key, "<not scraped yet>", "<unknown>")
+
+        repos.append(list_item)
 
     # Sort repos by name (asc) and scrape time (desc)
     repos = sorted(repos, key=lambda x: x.name)
