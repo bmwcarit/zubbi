@@ -19,9 +19,9 @@
 
         <h4>Where to put the documentation?</h4>
         <p>For <b>jobs</b>, the documentation must be put in the <i>description</i> field
-        of the job definition. In this case, only reStructuredText format is supported.
+        of the job definition. In this case, only reStructuredText format is supported.</p>
 
-        In case of <b>roles</b>, the documentation must be put in a README file inside
+        <p>In case of <b>roles</b>, the documentation must be put in a README file inside
         the role's directory. Please note, that the file extension must match
         the used format to be rendered properly.</p>
 
@@ -51,12 +51,20 @@
 
         {% include 'includes/code-example.html' %}
 
-
         <p>Be sure to provide the correct language in the code-block directive,
         otherwise it won't be highlighted properly. For more information you can
         take a look at the
         <a href="http://www.sphinx-doc.org/en/stable/markup/code.html">
             official Sphinx documentation</a>.</p>
+
+
+        <h4>Changelogs</h4>
+        <p>If you define a CHANGELOG file inside a role's directory, Zubbi will
+        show its contents in the <b>changelog</b> tab of a role's details page. This
+        file is rendered the same way like the README file, so the same rules apply.
+        Our recommended changelog format is the following (<i>CHANGELOG.rst</i>):</p>
+
+        {% include 'includes/changelog-example.html' %}
 
     </div>
 </div>
