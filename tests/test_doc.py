@@ -14,7 +14,20 @@
 
 import pytest
 
-from zubbi.doc import render_sphinx
+from zubbi.doc import render_markdown, render_sphinx
+
+
+@pytest.mark.parametrize(
+    "readme, expected",
+    [
+        ("Hello World!", "<p>Hello World!</p>\n"),
+        ("**Hello World!**", "<p><strong>Hello World!</strong></p>\n"),
+        ("# Hello World!", "<h1>Hello World!</h1>\n"),
+    ],
+)
+def test_render_markdown_simple(readme, expected):
+    result = render_markdown(readme)
+    assert expected == result["html"]
 
 
 @pytest.mark.parametrize(

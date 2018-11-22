@@ -36,7 +36,7 @@ requires = [
     "zuul-sphinx",
     "sphinx",
     "jinja2",
-    "readme_renderer",
+    "readme_renderer[md]",
     "tabulate",
     "gitpython",
 ]
