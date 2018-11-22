@@ -5,8 +5,27 @@ ES_USER = 'user'
 ES_PASSWORD = 'password'
 
 # Scraper configuration
-GITHUB_APP_ID = 0
-GITHUB_APP_KEY = '<path_to_keyfile>'
+# NOTE: The connection names must go in hand with the ones used in the tenant
+# configuration
+CONNECTIONS = {
+    # GitHub example
+    '<name>': {
+        'provider': 'github',
+        'url': 'https://github.com',
+        'app_id': 0,
+        'app_key': '<path_to_keyfile>',
+    },
+    # Gerrit example
+    '<name>': {
+        'provider': 'gerrit',
+        'url': '<git_remote_url>',
+        # Only necessary if different from the git_remote_url
+        'web_url': '<gerrit_url>',
+        'user': '<username>',
+        'password': '<password',
+    }
+}
+
 GITHUB_WEBHOOK_SECRET = '<secret>'
 # NOTE: Use only one of the following, not both
 TENANT_SOURCES_REPO = '<orga>/<repo>'

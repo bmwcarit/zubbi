@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import hashlib
 import logging
 import os
 
 import yaml
 
-from zubbi.models import ZuulTenant
 from zubbi.scraper.exceptions import CheckoutError, ScraperConfigurationError
 
 
@@ -28,51 +26,54 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TenantParser:
-    def __init__(self, scrape_time, sources_file=None, sources_repo=None):
+    def __init__(self, sources_file=None, sources_repo=None):
+        self.sources = None
+        self.repo_map = {}
+        self.tenants = []
+        # Initial call to load the sources file/repo
+        self.reload_sources(sources_file, sources_repo)
+
+    def reload_sources(self, sources_file=None, sources_repo=None):
         if sources_file:
             self.sources = self._load_tenant_sources_from_file(sources_file)
         else:
             self.sources = self._load_tenant_sources_from_repo(sources_repo)
 
-        self.scrape_time = scrape_time
-        self.repo_map = {}
-        self.tenants = []
+    def update(self, sources_file=None, sources_repo=None):
+        self.reload_sources(sources_file, sources_repo)
+        self.parse()
 
     def parse(self):
+        # Clear repo_map and tenant list first
+        self.repo_map.clear()
+        self.tenants.clear()
+
         for tenant_src in self.sources:
-            source = tenant_src["tenant"]["source"]
+            sources = tenant_src["tenant"]["source"]
             tenant_name = tenant_src["tenant"]["name"]
-            github_source = source.get("github")
-            if not github_source:
-                LOGGER.debug("No key 'github' found in source, skipping ...")
-                break
 
-            uuid = hashlib.sha1(str.encode(tenant_name)).hexdigest()
-            tenant = ZuulTenant(meta={"id": uuid})
-            tenant.tenant_name = tenant_name
-            tenant.scrape_time = self.scrape_time
+            # Iterate over all repositories specified in this tenant (per provider)
+            for connection_name, source in sources.items():
+                # project_type is config- or untrusted-project
+                for project_type, projects in source.items():
+                    for project in projects:
+                        self._update_repo_map(project, connection_name, tenant_name)
 
-            # project_type is config- or untrusted-project
-            for project_type, projects in github_source.items():
-                for project in projects:
-                    self._update_repo_map(project, tenant_name)
+            self.tenants.append(tenant_name)
 
-            self.tenants.append(tenant)
-
-        return self.repo_map, self.tenants
-
-    def _update_repo_map(self, project, tenant):
+    def _update_repo_map(self, project, connection_name, tenant):
         project_name, exclude = self._extract_project(project)
 
         # Map the current tenant to the current repository
         repo_tenant_entry = self.repo_map.setdefault(
-            project_name, {"jobs": [], "roles": []}
+            project_name,
+            {"tenants": {"jobs": [], "roles": []}, "connection_name": connection_name},
         )
 
         # Update repo_tenant mapping
         if "jobs" not in exclude:
-            repo_tenant_entry["jobs"].append(tenant)
-        repo_tenant_entry["roles"].append(tenant)
+            repo_tenant_entry["tenants"]["jobs"].append(tenant)
+        repo_tenant_entry["tenants"]["roles"].append(tenant)
 
     def _extract_project(self, project):
         project_name = project

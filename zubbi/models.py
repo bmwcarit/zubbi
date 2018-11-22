@@ -63,6 +63,7 @@ class ZuulTenant(ZubbiDoc):
 
 class GitRepo(ZubbiDoc):
     repo_name = Text()
+    provider = Text()
 
     class Index:
         name = "git-repos"

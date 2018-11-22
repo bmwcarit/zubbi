@@ -21,7 +21,6 @@ from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 
 import click
-import github3
 import zmq
 from elasticsearch.exceptions import ConflictError
 from elasticsearch_dsl import Q
@@ -37,9 +36,11 @@ from zubbi.models import (
     ZuulJob,
     ZuulTenant,
 )
+from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.github import GitHubConnection
 from zubbi.scraper.exceptions import ScraperConfigurationError
 from zubbi.scraper.repo_parser import RepoParser
+from zubbi.scraper.repos.gerrit import GerritRepository
 from zubbi.scraper.repos.github import GitHubRepository
 from zubbi.scraper.scraper import Scraper
 from zubbi.scraper.tenant_parser import TenantParser
@@ -47,6 +48,8 @@ from zubbi.scraper.tenant_parser import TenantParser
 
 LOGGER = logging.getLogger(__name__)
 
+CONNECTIONS = {"github": GitHubConnection, "gerrit": GerritConnection}
+REPOS = {"github": GitHubRepository, "gerrit": GerritRepository}
 RepoItem = namedtuple("RepoItem", "name scraped provider")
 
 
@@ -70,70 +73,46 @@ def configure_logger(verbosity):
     LOGGER.addHandler(console_handler)
 
 
-# TODO (fschmidt): Move this method to the GitHubConnection class as it already
-# has all the necessary parameters.
-def _create_github_client(github_url, gh_con, project):
-    """Create a github3 client per repo/installation."""
-    token = gh_con._get_installation_key(project=project)
-    if not token:
-        LOGGER.warning(
-            "Could not find an authentication token for '%s'. Do you "
-            "have access to this repository?",
-            project,
-        )
-        return
-    gh = github3.GitHubEnterprise(github_url)
-    gh.login(token=token)
-    return gh
-
-
-def update_tenant_configuration(
-    tenant_sources_repo, tenant_sources_file, github_url, gh_con, scrape_time
-):
+def _initialize_tenant_parser(tenant_sources_repo, tenant_sources_file, connections):
     if tenant_sources_repo:
-        gh = _create_github_client(github_url, gh_con, tenant_sources_repo)
-        if not gh:
+        # Config entry must be in format <connection_name>:<repo>
+        con_name, repo_name = tenant_sources_repo.split(":", 1)
+        con = connections.get(con_name)
+        repo_class = REPOS.get(con_name)
+        if not con or not repo_class:
             raise ScraperConfigurationError(
-                "Cannot load tenant sources from repo '{}'. No access.".format(
-                    tenant_sources_repo
-                )
+                "Cannot load tenant sources from repo '{}'. Specified connection '{}' "
+                "is not available".format(repo_name, con_name)
             )
 
-        gh_repo = GitHubRepository(tenant_sources_repo, gh)
-        tenant_parser = TenantParser(sources_repo=gh_repo, scrape_time=scrape_time)
+        repo = repo_class(repo_name, con)
+        tenant_parser = TenantParser(sources_repo=repo)
     else:
-        tenant_parser = TenantParser(
-            sources_file=tenant_sources_file, scrape_time=scrape_time
-        )
+        tenant_parser = TenantParser(sources_file=tenant_sources_file)
 
-    return tenant_parser.parse()
+    tenant_parser.parse()
+    return tenant_parser
 
 
-def _initialize_repo_cache(connections):
+def _initialize_repo_cache():
+    """Initialize the repository cache used for scraping.
+
+    Retrieves a list of repositories with their provider and last scraping time
+    from Elasticsearch.
+    This list can be used to check which repos need to be scraped (e.g. after
+    a specific amount of time).
+    """
     LOGGER.info("Initializing repository cache")
     # Initialize Repo Cache
     repo_cache = {}
 
-    # TODO (fschmidt): Once we have more providers, this could be done in a
-    # loop, using all listed connections and add the connection's key as
-    # provider in the cached_repo
-    gh_con = connections["github"]
-
     # Get all repos from Elasticsearch
     for hit in GitRepo.search().query("match_all").scan():
-        # Add 'github' type if they are listed in our github connection
-        if hit.repo_name in gh_con.repos:
-            repo_type = "github"
-        else:
-            repo_type = None
         # TODO (fschmidt): Maybe we can use this list as cache for the whole
         # scraper-webhook part.
         # This way, we could reduce the amount of operations needed for GitHub
         # and ElasticSearch
-        repo_cache[hit.repo_name] = {
-            "scrape_time": hit.scrape_time,
-            "provider": repo_type,
-        }
+        repo_cache[hit.repo_name] = hit.to_dict(skip_empty=False)
 
     return repo_cache
 
@@ -149,11 +128,40 @@ def _initialize_repo_cache(connections):
 def main(ctx, verbosity):
     configure_logger(verbosity)
 
+    # Load the configurations from file
     config = Config(root_path=".")
     config.from_object(default_settings)
     config.from_envvar(ZUBBI_SETTINGS_ENV)
 
-    ctx.obj = {"config": config}
+    # Validate the configuration
+    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
+    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
+    # Fail if both are set or none of both is set
+    if (
+        not tenant_sources_file
+        and not tenant_sources_repo
+        or (tenant_sources_file and tenant_sources_repo)
+    ):
+        raise ScraperConfigurationError(
+            "Either one of 'TENANT_SOURCES_REPO' "
+            "and 'TENANT_SOURCES_FILE' must be set, "
+            "but not both."
+        )
+
+    # Initialize objects that are needed by all subcommands
+    connections = init_connections(config)
+    repo_cache = _initialize_repo_cache()
+    tenant_parser = _initialize_tenant_parser(
+        tenant_sources_repo, tenant_sources_file, connections
+    )
+
+    # Store everything in click's context object to be available for subcommands
+    ctx.obj = {
+        "config": config,
+        "connections": connections,
+        "repo_cache": repo_cache,
+        "tenant_parser": tenant_parser,
+    }
 
     if ctx.invoked_subcommand is None:
         ctx.invoke(scrape)
@@ -163,10 +171,7 @@ def main(ctx, verbosity):
 @click.pass_context
 def list_repos(ctx):
     repos = []
-    config = ctx.obj["config"]
-
-    connections = init_connections(config)
-    repo_cache = _initialize_repo_cache(connections)
+    repo_cache = ctx.obj["repo_cache"]
 
     # Flatten the repo dict and format the scrape_time for console output
     for key, val in repo_cache.items():
@@ -197,32 +202,17 @@ def list_repos(ctx):
 @click.option("--repo", "-r", help="Scrape only the specified repo", multiple=True)
 @click.pass_context
 def scrape(ctx, full, repo):
-
     LOGGER.info("Hello, Zubbi!")
+
     config = ctx.obj["config"]
-
-    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
-    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
-
-    # Fail if both are set or none of both is set
-    if (
-        not tenant_sources_file
-        and not tenant_sources_repo
-        or (tenant_sources_file and tenant_sources_repo)
-    ):
-        raise ScraperConfigurationError(
-            "Either one of 'TENANT_SOURCES_REPO' "
-            "and 'TENANT_SOURCES_FILE' must be set, "
-            "but not both."
-        )
-
-    connections = init_connections(config)
-    repo_cache = _initialize_repo_cache(connections)
+    connections = ctx.obj["connections"]
+    repo_cache = ctx.obj["repo_cache"]
+    tenant_parser = ctx.obj["tenant_parser"]
 
     if full:
-        scrape_full(config, connections)
+        scrape_full(connections, tenant_parser)
     elif repo:
-        scrape_full(config, connections, repos=repo)
+        scrape_full(connections, tenant_parser, repos=repo)
     else:
         # Listen to ZMQ messages
         context = zmq.Context()
@@ -241,6 +231,7 @@ def scrape(ctx, full, repo):
                     json.loads(payload.decode("utf-8")),
                     config,
                     connections,
+                    tenant_parser,
                     repo_cache,
                 )
             except zmq.error.Again:
@@ -250,14 +241,10 @@ def scrape(ctx, full, repo):
 
             # Check if a periodic run is necessary
             LOGGER.debug("Checking for outdated repos")
-            scrape_outdated(config, connections, repo_cache)
+            scrape_outdated(config, connections, tenant_parser, repo_cache)
 
 
 def init_connections(config):
-    # Initialize global GitHub connection for GitHub App
-    gh_con = GitHubConnection(config)
-    gh_con.onLoad()
-
     # Initialize Elasticsearch connection
     init_elasticsearch_con(
         config["ES_HOST"],
@@ -266,13 +253,20 @@ def init_connections(config):
         config.get("ES_PORT"),
     )
 
-    # NOTE (fschmidt): We could use this one to store e.g. the Gerrit connection
-    # also in here
-    connections = {"github": gh_con}
+    connections = {}
+    for con_name, con_data in config["CONNECTIONS"].items():
+        # Look up the connection provider and initialize it with the remaining
+        # config keys. Abstraction for e.g. the following:
+        # gh_con = GitHubConnection(**con_data)
+        # connections['github'] = gh_con
+        con_class = CONNECTIONS.get(con_data.pop("provider"))
+        con = con_class(**con_data)
+        con.init()
+        connections[con_name] = con
     return connections
 
 
-def scrape_outdated(config, connections, repo_cache):
+def scrape_outdated(config, connections, tenant_parser, repo_cache):
     scrape_interval = config["FORCE_SCRAPE_INTERVAL"]
     repo_list = []
     now = datetime.now(timezone.utc)
@@ -289,7 +283,7 @@ def scrape_outdated(config, connections, repo_cache):
             scrape_interval,
             repo_list,
         )
-        scrape_repo_list(repo_list, config, connections, repo_cache)
+        scrape_repo_list(repo_list, connections, tenant_parser, repo_cache=repo_cache)
     else:
         LOGGER.info(
             "Found no repos which weren't scraped for %d hours: %s",
@@ -298,38 +292,94 @@ def scrape_outdated(config, connections, repo_cache):
         )
 
 
-def scrape_full(config, connections, repos=None):
-    gh_con = connections["github"]
+def scrape_full(connections, tenant_parser, repos=None):
     if repos is None:
-        repos = list(gh_con.repos)
-    # TODO (fschmidt): Instead of a simple string list, we should provide
-    # the whole repo_cache entry containing also the provider info
-    # (github, gerrit) to simplify the finding of the correct connection
-    scrape_repo_list(repos, config, connections)
+        # If we don't have any repos provided, we get all available once from the
+        # tenant configuration
+        tenant_parser.parse()
+        repo_map = tenant_parser.repo_map
+        tenant_list = tenant_parser.tenants
+        scrape_time = datetime.now(timezone.utc)
+        _scrape_repo_map(
+            repo_map,
+            tenant_list,
+            connections,
+            scrape_time,
+            repo_cache={},
+            delete_only=False,
+        )
+    else:
+        scrape_repo_list(repos, connections, tenant_parser)
 
 
 def scrape_repo_list(
-    repo_list, config, connections, repo_cache=None, delete_only=False
+    repo_list, connections, tenant_parser, repo_cache=None, delete_only=False
 ):
+    scrape_time = datetime.now(timezone.utc)
+
     # Simplify the usage of a non-existing repo cache
     if repo_cache is None:
         repo_cache = {}
 
-    scrape_time = datetime.now(timezone.utc)
-    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
-    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
-    github_url = config.get("GITHUB_URL")
-    gh_con = connections["github"]
+    # Update tenant sources
+    # TODO (fschmidt): This should not be necessary for each scraping. But, as we
+    # don't have a mechanism yet to filter for the necessary events, we keep it
+    # like this.
+    tenant_parser.parse()
+    repo_map = tenant_parser.repo_map
+    tenant_list = tenant_parser.tenants
+    filtered_repo_map = {}
+    # Get the relevant repositories from the tenant parser's repo map.
+    # Repos which are not part of them won't be scraped.
+    for repo_name in repo_list:
+        # Get the tenants from the repo map. If we get no tenants, we assume
+        # that the repo is not part of the tenant config.
+        repo_data = repo_map.get(repo_name, None)
+        if repo_data is None:
+            LOGGER.warning(
+                "Repo '%s' is not part of our tenant sources. Skip scraping.", repo_name
+            )
+            continue
+        # TODO Simplify this with dict/list comprehension
+        filtered_repo_map[repo_name] = repo_data
+
+    if not filtered_repo_map:
+        LOGGER.info("Repo list is empty, nothing to scrape.")
+        return
+
+    return _scrape_repo_map(
+        filtered_repo_map,
+        tenant_list,
+        connections,
+        scrape_time,
+        repo_cache,
+        delete_only,
+    )
+
+
+def _scrape_repo_map(
+    repo_map, tenants, connections, scrape_time, repo_cache, delete_only
+):
+    # TODO It would be great if the tenant_list contains only the relevant tenants based
+    # on the repository map (or whatever is the correct source). In other words:
+    # It should only contain the tenants which are really "updated".
+
+    tenant_list = []
+    for tenant_name in tenants:
+        # Build the tenant data for Elasticsearch
+        uuid = hashlib.sha1(str.encode(tenant_name)).hexdigest()
+        tenant = ZuulTenant(meta={"id": uuid})
+        tenant.tenant_name = tenant_name
+        tenant.scrape_time = scrape_time
+        tenant_list.append(tenant)
+
+    # Simplify the list of repos for log output and keyword match in Elasticsearch
+    # NOTE (fschmidt): Elasticsearch can only work with lists
+    repo_list = list(repo_map.keys())
 
     LOGGER.info(
         "Using scraping time: %s", datetime.strftime(scrape_time, "%Y-%m-%dT%H:%M:%SZ")
     )
-
-    # TODO (fschmidt): This should only be done once during initialization
-    # and when a repo or installation changed
-
-    # Update the installation map
-    gh_con._prime_install_map()
 
     if not delete_only:
         # TODO (fschmidt): This should only be done once during initialization,
@@ -342,53 +392,60 @@ def scrape_repo_list(
         # the tenant configuration in the push event.
 
         # Update tenant sources
-        repo_map, tenant_list = update_tenant_configuration(
-            tenant_sources_repo, tenant_sources_file, github_url, gh_con, scrape_time
-        )
 
         # First, store the tenants in Elasticsearch
-        LOGGER.debug(
-            "Updating %d tenant definitions in Elasticsearch", len(tenant_list)
-        )
+        LOGGER.info("Updating %d tenant definitions in Elasticsearch", len(tenant_list))
         ZuulTenant.bulk_save(tenant_list)
 
         LOGGER.info("Scraping the following repositories: %s", repo_list)
         es_repos = []
-        for repo_name in repo_list:
-            # Get the tenants from the repo map. If we get no tenants, we assume
-            # that the repo is not part of the tenant config.
-            tenants = repo_map.get(repo_name, None)
-            if tenants is None:
-                LOGGER.warning(
-                    "Repo '%s' is not part of our tenant sources. Skip scraping.",
+
+        for repo_name, repo_data in repo_map.items():
+            # Extract the data from the repo_data
+            tenants = repo_data["tenants"]
+            connection_name = repo_data["connection_name"]
+
+            cached_repo = repo_cache.setdefault(repo_name, repo_data)
+
+            # Update the scrape time in cache
+            cached_repo["scrape_time"] = scrape_time
+
+            # Initialize the repository for scraping
+            con = connections.get(connection_name)
+            if not con:
+                LOGGER.error(
+                    "Checkout of repo '%s' failed. No connection named '%s' found. "
+                    "Please check your configuration file.",
                     repo_name,
+                    connection_name,
+                )
+                continue
+            provider = con.provider
+            repo_class = REPOS.get(provider)
+            repo = repo_class(repo_name, con)
+
+            # Check if the repo was created successfully, if not, skip it.
+            # Possible reasons are e.g: No access (via GitHub app or Gerrit user),
+            # Clone/checkout failures for plain git repos or similar.
+            if not repo._repo:
+                LOGGER.error(
+                    "Repo '%s' could not be initialized. Skip scraping.", repo_name
                 )
                 continue
 
             # Build the data for the repo itself to be stored in Elasticsearch
             uuid = hashlib.sha1(str.encode(repo_name)).hexdigest()
-            repo = GitRepo(meta={"id": uuid})
-            repo.repo_name = repo_name
-            repo.scrape_time = scrape_time
-            es_repos.append(repo)
-
-            cached_repo = repo_cache.setdefault(
-                repo_name,
-                {
-                    # As we are in a GitHub event, we can just assume, the provider
-                    # is github
-                    "provider": "github"
-                },
-            )
-
-            # Update the scrape time in cache
-            cached_repo["scrape_time"] = scrape_time
+            es_repo = GitRepo(meta={"id": uuid})
+            es_repo.repo_name = repo_name
+            es_repo.scrape_time = scrape_time
+            es_repo.provider = provider
+            es_repos.append(es_repo)
 
             # scrape the repo if is part of the tenant config
-            scrape_repo(repo_name, tenants, github_url, gh_con, scrape_time)
+            scrape_repo(repo, tenants, scrape_time)
 
         # Store the information for all repos we just scraped in Elasticsearch
-        LOGGER.debug("Updating %d repo definitions in Elasticsearch", len(es_repos))
+        LOGGER.info("Updating %d repo definitions in Elasticsearch", len(es_repos))
         GitRepo.bulk_save(es_repos)
     else:
         LOGGER.info("Deleting the following repositories: %s", repo_list)
@@ -411,23 +468,15 @@ def scrape_repo_list(
     )
 
 
-def scrape_repo(repo_name, tenants, github_url, gh_con, scrape_time):
-    gh = _create_github_client(github_url, gh_con, repo_name)
-    if not gh:
-        LOGGER.warning("Skipping GitHub repo '%s'", repo_name)
-        return
+def scrape_repo(repo, tenants, scrape_time):
+    job_files, role_files = Scraper(repo).scrape()
 
-    gh_repo = GitHubRepository(repo_name, gh, gh_con)
-    job_files, role_files = Scraper(gh_repo).scrape()
+    jobs, roles = RepoParser(repo, tenants, job_files, role_files, scrape_time).parse()
 
-    jobs, roles = RepoParser(
-        gh_repo, tenants, job_files, role_files, scrape_time
-    ).parse()
-
-    LOGGER.debug("Updating %d job definitions in Elasticsearch", len(jobs))
+    LOGGER.info("Updating %d job definitions in Elasticsearch", len(jobs))
     ZuulJob.bulk_save(jobs)
 
-    LOGGER.debug("Updating %d role definitions in Elasticsearch", len(roles))
+    LOGGER.info("Updating %d role definitions in Elasticsearch", len(roles))
     AnsibleRole.bulk_save(roles)
 
 
@@ -452,7 +501,7 @@ def delete_outdated(scrape_time, indices, extra_filter=None):
 # TODO (fschmidt): Maybe it's worth to move the event_* methods to a GitHubEventHandler
 # class or similar. This way, we could encapsulate different events in their respective
 # environment (e.g. GitHub, Gerrit, ...)
-def handle_event(event, payload, config, connections, repo_cache):
+def handle_event(event, payload, config, connections, tenant_parser, repo_cache):
     LOGGER.info("Handling event '%s'", event)
     try:
         # TODO (fschmidt): Maybe we should change this file/module to be a class
@@ -469,14 +518,14 @@ def handle_event(event, payload, config, connections, repo_cache):
         # TODO (fschmidt): What about 'repository' events?
         # To get updates for public/private?
         # https://developer.github.com/v3/activity/events/types/#repositoryevent
-        method(payload, config, connections, repo_cache)
+        method(payload, config, connections, tenant_parser, repo_cache)
     except Exception:
         # TODO (fschmidt): Does it make sense to catch an Exception here?
         # Could we catch anything more specific?
         LOGGER.exception("Error while handling event '%s'", event)
 
 
-def event_installation(payload, config, connections, repo_cache):
+def event_installation(payload, config, connections, tenant_parser, repo_cache):
     action = payload.get("action")
     installation_id = payload.get("installation", {}).get("id")
     repositories = payload.get("repositories", [])
@@ -486,10 +535,12 @@ def event_installation(payload, config, connections, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repositories]
         # Scrape them
-        scrape_repo_list(repo_names, config, connections, repo_cache)
+        scrape_repo_list(repo_names, connections, tenant_parser, repo_cache=repo_cache)
 
     if action == "deleted":
         LOGGER.info("Deleting data for installation %d", installation_id)
+        # TODO (felix) Get the right connection from the configuration based on what?
+        # The provider? The github url? Both?
         gh_con = connections["github"]
         # Get repos for this installation from our GitHubConnection as they are
         # not listed in the payload.
@@ -509,13 +560,19 @@ def event_installation(payload, config, connections, repo_cache):
             return
         # Delete all data for those repos
         scrape_repo_list(
-            repositories, config, connections, repo_cache, delete_only=True
+            repositories,
+            connections,
+            tenant_parser,
+            repo_cache=repo_cache,
+            delete_only=True,
         )
 
         # TODO (fschmidt): Should we remove them also from the installatino map?
 
 
-def event_installation_repositories(payload, config, connections, repo_cache):
+def event_installation_repositories(
+    payload, config, connections, tenant_parser, repo_cache
+):
     installation_id = payload.get("installation", {}).get("id")
     repos_added = payload.get("repositories_added")
     repos_removed = payload.get("repositories_removed")
@@ -538,7 +595,7 @@ def event_installation_repositories(payload, config, connections, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repos_added]
         # Scrape them
-        scrape_repo_list(repo_names, config, connections, repo_cache)
+        scrape_repo_list(repo_names, connections, tenant_parser, repo_cache=repo_cache)
 
     # Just delete the data for these repos
     if repos_removed is not None:
@@ -550,10 +607,16 @@ def event_installation_repositories(payload, config, connections, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repos_removed]
         # Delete all data for those repos
-        scrape_repo_list(repo_names, config, connections, repo_cache, delete_only=True)
+        scrape_repo_list(
+            repo_names,
+            connections,
+            tenant_parser,
+            repo_cache=repo_cache,
+            delete_only=True,
+        )
 
 
-def event_push(payload, config, connections, repo_cache):
+def event_push(payload, config, connections, tenant_parser, repo_cache):
     repo_name = payload.get("repository", {}).get("full_name")
     # installation_id = payload.get('installation', {}).get('id')
     ref = payload.get("ref")
@@ -561,6 +624,8 @@ def event_push(payload, config, connections, repo_cache):
     # new_ref = payload.get('after')
     # commits = payload.get('commits')
 
+    # TODO (felix) Get the right connection from the configuration based on what?
+    # The provider? The github url? Both?
     gh_con = connections["github"]
 
     repo_info = gh_con.installation_map.get(repo_name)
@@ -584,7 +649,7 @@ def event_push(payload, config, connections, repo_cache):
 
     LOGGER.info("Handling push event for repo %s with ref %s", repo_name, ref)
 
-    scrape_repo_list([repo_name], config, connections, repo_cache)
+    scrape_repo_list([repo_name], connections, tenant_parser, repo_cache=repo_cache)
 
 
 if __name__ == "__main__":

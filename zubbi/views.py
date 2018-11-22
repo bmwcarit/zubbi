@@ -307,7 +307,7 @@ class WebhookView(ZubbiMethodView):
             json_abort(401, "Request signature does not match calculated signature.")
 
     def check_event(self, headers):
-        # For now, we are only interessted in the following events:
+        # For now, we are only interested in the following events:
         # - installation {created, deleted}
         # - installation_repositories {added, removed}
         # - push

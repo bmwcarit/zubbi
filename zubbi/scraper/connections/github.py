@@ -16,6 +16,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urljoin
 
+import github3
 import jwt
 import requests
 
@@ -26,44 +27,43 @@ LOGGER = logging.getLogger(__name__)
 
 
 class GitHubConnection:
-    def __init__(self, config):
-        self.config = config
+    def __init__(self, url, app_id, app_key):
 
-        self.base_url = urljoin(self.config["GITHUB_URL"], "api/v3")
-        self.graphql_url = urljoin(self.config["GITHUB_URL"], "api/graphql")
+        self.base_url = url
+        self.api_url = urljoin(url, "api/v3")
+        self.graphql_url = urljoin(url, "api/graphql")
 
-        self.app_id = None
-        self.app_key = None
+        self._app_id = app_id
+        self._app_key = app_key
 
         self.installation_map = {}
         self.installation_token_cache = {}
 
-    def onLoad(self):
-        LOGGER.debug("Authenticating against GitHub")
+    def init(self):
+        LOGGER.info("Initializing GitHub connection to %s", self.base_url)
         self._authenticate()
         self._prime_install_map()
 
     def _authenticate(self):
-        app_id = self.config.get("GITHUB_APP_ID")
-        app_key_file = self.config.get("GITHUB_APP_KEY")
+        LOGGER.debug("Authenticating against GitHub")
         try:
-            with open(app_key_file, "r") as f:
+            with open(self._app_key, "r") as f:
                 app_key = f.read()
         except IOError:
-            LOGGER.error("Failed to open app key file: %s", app_key_file)
+            LOGGER.error("Failed to open app key file: %s", self._app_key)
 
-        if not app_id and app_key:
+        if not self._app_id and app_key:
             LOGGER.error(
                 "You must provide an app_id and an app_key to use "
                 "installation based authentication"
             )
             return
 
-        self.app_id = app_id
+        self.app_id = self._app_id
         self.app_key = app_key
 
     def _get_app_auth_headers(self):
-        """Set the correctt auth headers to authenticate against GitHub."""
+        """Set the correct auth headers to authenticate against GitHub."""
         now = datetime.now(timezone.utc)
         expiry = now + timedelta(minutes=5)
 
@@ -106,7 +106,7 @@ class GitHubConnection:
             LOGGER.debug("Requesting new token for installation %s", installation_id)
             headers = self._get_app_auth_headers()
             url = "{}/installations/{}/access_tokens".format(
-                self.base_url, installation_id
+                self.api_url, installation_id
             )
 
             json_data = {"user_id": user_id} if user_id else None
@@ -131,7 +131,7 @@ class GitHubConnection:
 
     def _prime_install_map(self):
         """Fetch all installations and look up the ID for each."""
-        url = "{}/app/installations".format(self.base_url)
+        url = "{}/app/installations".format(self.api_url)
         headers = self._get_app_auth_headers()
         LOGGER.debug("Fetching installations for GitHub app")
 
@@ -148,7 +148,7 @@ class GitHubConnection:
                 "Authorization": "token {}".format(token),
             }
 
-            url = "{}/installation/repositories?per_page=100".format(self.base_url)
+            url = "{}/installation/repositories?per_page=100".format(self.api_url)
             while url:
                 LOGGER.debug("Fetching repos for installation %s", install_id)
                 response = requests.get(url, headers=headers)
@@ -168,9 +168,27 @@ class GitHubConnection:
                 # Check if we need to do further page calls
                 url = response.links.get("next", {}).get("url")
 
+    def create_github_client(self, project):
+        """Create a github3 client per repo/installation."""
+        token = self._get_installation_key(project=project)
+        if not token:
+            LOGGER.warning(
+                "Could not find an authentication token for '%s'. Do you "
+                "have access to this repository?",
+                project,
+            )
+            return
+        gh = github3.GitHubEnterprise(self.base_url)
+        gh.login(token=token)
+        return gh
+
     @property
     def repos(self):
         return self.installation_map.keys()
+
+    @property
+    def provider(self):
+        return "github"
 
     def get_repos_for_installation(self, install_id):
         return [
