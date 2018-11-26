@@ -11,7 +11,8 @@ based CI system - even if they are spread over multiple tenants or repositories.
 *Contents:* **[Requirements](#requirements)** |
 **[Architecture](#architecture)** |
 **[Setup & Configuration](#setup--configuration)** |
-**[Development](#development)**
+**[Development](#development)** |
+**[Quickstart](#quickstart)**
 
 ---
 
@@ -119,56 +120,57 @@ $ tox
 ```
 
 ## Quickstart
+Prerequisites: [Docker Compose](https://docs.docker.com/compose/) 
 
-If you followed the [Development](#development) section to set up your development
-environment, you can now set up a local zubbi.
+If you followed the [Development](#development) guide, you should already have
+a virtual environment with all required dependencies to run Zubbi. If not, you
+could also install Zubbi via `pip` in an own virtualenv:
+```shell
+$ pip install zubbi
+```
 
-If you have [Docker Compose](https://docs.docker.com/compose/) installed, you
-can use the `docker-compose.yaml` file to start a local Elasticsearch instance
-for development:
+You can use the `docker-compose.yaml` file to start a local Elasticsearch instance:
 
 ```shell
 $ docker-compose up
 ```
 
-To use this Elasticsearch instance in your local Zubbi application, put
-the following in your `settings.cfg` file:
-```ini
-ES_HOST = 'localhost'
-ES_PORT = 9200
-```
-
 To get a first set of data, put the following in `tenant-config.yaml`:
 ```yaml
 - tenant:
-    name: github
+    name: openstack
     source:
-      github:
+      openstack-gerrit:
         untrusted-projects:
           - openstack-infra/zuul-jobs
 ```
 
 Put the following in your `settings.cfg` to allow scraping based on the tenant
-configuration above:
+configuration above and store the results in the local Elasticsearch instance.
+Please note, that the key in the `CONNECTIONS` dictionary must go in hand with
+the `source` names in the tenant configuration.
+
 ```ini
+ES_HOST = 'localhost'
+ES_PORT = 9200
 TENANT_SOURCES_FILE = 'tenant-config.yaml'
 
 CONNECTIONS = {
-    'github': {
-        'provider': 'github',
-        'url': 'https://github.com',
+    'openstack-gerrit': {
+        'provider': 'git',
+        'git_host_url': 'https://git.openstack.org',
     },
 }
 ```
 
 Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
-of data into Elasticsearch:
+of building blocks into Zubbi/Elasticsearch:
 
 ```shell
 $ zubbi-scrape scrape -f
 ```
 
-Now we can start zubbi-web to take a look (and search) for out data:
+Now we can start Zubbi web to take a look at (and search for) our data:
 ```shell
 $ export FLASK_APP=zubbi
 $ export FLASK_DEBUG=true
