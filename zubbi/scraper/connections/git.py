@@ -43,8 +43,16 @@ class GitConnection:
 
     def get_remote_url(self, repository_name):
         # TODO (felix) Find a better way to rebuild the url with auth values
-        scheme, _, url = self.base_url.partition("://")
-        auth_base_url = "{}://{}:{}@{}".format(scheme, self.user, self.password, url)
+        scheme, _, url = self.git_host_url.partition("://")
+
+        if self.user and self.password:
+            auth_part = "{}:{}@".format(self.user, self.password)
+        elif self.user:
+            auth_part = "{}@".format(self.user)
+        else:
+            auth_part = ""
+
+        auth_base_url = "{}://{}{}".format(scheme, auth_part, url)
         remote_url = urljoin(auth_base_url, repository_name)
         return remote_url
 
