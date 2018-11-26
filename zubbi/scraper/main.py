@@ -78,7 +78,8 @@ def _initialize_tenant_parser(tenant_sources_repo, tenant_sources_file, connecti
         # Config entry must be in format <connection_name>:<repo>
         con_name, repo_name = tenant_sources_repo.split(":", 1)
         con = connections.get(con_name)
-        repo_class = REPOS.get(con_name)
+        provider = con.provider
+        repo_class = REPOS.get(provider)
         if not con or not repo_class:
             raise ScraperConfigurationError(
                 "Cannot load tenant sources from repo '{}'. Specified connection '{}' "
@@ -172,16 +173,22 @@ def main(ctx, verbosity):
 def list_repos(ctx):
     repos = []
     repo_cache = ctx.obj["repo_cache"]
+    tenant_parser = ctx.obj["tenant_parser"]
 
-    # Flatten the repo dict and format the scrape_time for console output
-    for key, val in repo_cache.items():
-        repos.append(
-            RepoItem(
+    for key in tenant_parser.repo_map.keys():
+        # Get the corresponding data from the repo cache, flatten the repo dict
+        # and format the scrape_time for console output.
+        cached_repo = repo_cache.get(key)
+        if cached_repo is not None:
+            list_item = RepoItem(
                 key,
-                datetime.strftime(val["scrape_time"], "%Y-%m-%dT%H:%M:%SZ"),
-                val["provider"],
+                datetime.strftime(cached_repo["scrape_time"], "%Y-%m-%dT%H:%M:%SZ"),
+                cached_repo["provider"],
             )
-        )
+        else:
+            list_item = RepoItem(key, "<not scraped yet>", "<unknown>")
+
+        repos.append(list_item)
 
     # Sort repos by name (asc) and scrape time (desc)
     repos = sorted(repos, key=lambda x: x.name)
