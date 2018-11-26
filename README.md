@@ -96,8 +96,33 @@ ES_PASSWORD = 'password'
 ```
 
 ## Development
+Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
+[Pipenv](https://docs.pipenv.org/) installed.
 
-### Elasticsearch
+To install necessary dependencies for development, run:
+```shell
+$ pipenv shell
+$ pipenv install --dev
+```
+
+We are using [black](https://github.com/ambv/black) to ensure well-formatted
+Python code. To automatically ensure well-formatted code each commit, you can
+use the included pre-commit hook. To install the commit hook, simply run:
+```shell
+$ pre-commit install
+```
+
+Before submitting pull requests, run tests and static code checks using tox:
+
+```shell
+$ tox
+```
+
+## Quickstart
+
+If you followed the [Development](#development) section to set up your development
+environment, you can now set up a local zubbi.
+
 If you have [Docker Compose](https://docs.docker.com/compose/) installed, you
 can use the `docker-compose.yaml` file to start a local Elasticsearch instance
 for development:
@@ -113,13 +138,38 @@ ES_HOST = 'localhost'
 ES_PORT = 9200
 ```
 
-### Zubbi web
-Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
-[Pipenv](https://docs.pipenv.org/) installed
+To get a first set of data, put the following in `tenant-config.yaml`:
+```yaml
+- tenant:
+    name: github
+    source:
+      github:
+        untrusted-projects:
+          - openstack-infra/zuul-jobs
+```
 
-To start the basic Zubbi web application:
+Put the following in your `settings.cfg` to allow scraping based on the tenant
+configuration above:
+```ini
+TENANT_SOURCES_FILE = 'tenant-config.yaml'
+
+CONNECTIONS = {
+    'github': {
+        'provider': 'github',
+        'url': 'https://github.com',
+    },
+}
+```
+
+Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
+of data into Elasticsearch:
+
 ```shell
-$ pipenv shell
+$ zubbi-scrape scrape -f
+```
+
+Now we can start zubbi-web to take a look (and search) for out data:
+```shell
 $ export FLASK_APP=zubbi
 $ export FLASK_DEBUG=true
 $ flask run
@@ -149,21 +199,6 @@ Additionally, the scraper provides a `list-repos` command to list all
 available repositories and when they were scraped the last time:
 ```shell
 $ ./zubbi-scrape list-repos
-```
-
-### Running tests & static checks
-
-We are using [black](https://github.com/ambv/black) to ensure well-formatted
-Python code. To ensure that your code is well-formatted on each commit, you can
-use the included pre-commit hook. To install the commit hook, simply run:
-```shell
-$ pre-commit install
-```
-
-Tests are run using tox:
-
-```shell
-$ tox
 ```
 
 ### Installing & updating dependencies
