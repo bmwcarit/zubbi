@@ -153,6 +153,13 @@ $ ./zubbi-scrape list-repos
 
 ### Running tests & static checks
 
+We are using [black](https://github.com/ambv/black) to ensure well-formatted
+Python code. To ensure that your code is well-formatted on each commit, you can
+use the included pre-commit hook. To install the commit hook, simply run:
+```shell
+$ pre-commit install
+```
+
 Tests are run using tox:
 
 ```shell
