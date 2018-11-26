@@ -37,10 +37,12 @@ from zubbi.models import (
     ZuulTenant,
 )
 from zubbi.scraper.connections.gerrit import GerritConnection
+from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.connections.github import GitHubConnection
 from zubbi.scraper.exceptions import ScraperConfigurationError
 from zubbi.scraper.repo_parser import RepoParser
 from zubbi.scraper.repos.gerrit import GerritRepository
+from zubbi.scraper.repos.git import GitRepository
 from zubbi.scraper.repos.github import GitHubRepository
 from zubbi.scraper.scraper import Scraper
 from zubbi.scraper.tenant_parser import TenantParser
@@ -48,8 +50,12 @@ from zubbi.scraper.tenant_parser import TenantParser
 
 LOGGER = logging.getLogger(__name__)
 
-CONNECTIONS = {"github": GitHubConnection, "gerrit": GerritConnection}
-REPOS = {"github": GitHubRepository, "gerrit": GerritRepository}
+CONNECTIONS = {
+    "git": GitConnection,
+    "github": GitHubConnection,
+    "gerrit": GerritConnection,
+}
+REPOS = {"git": GitRepository, "github": GitHubRepository, "gerrit": GerritRepository}
 RepoItem = namedtuple("RepoItem", "name scraped provider")
 
 
