@@ -97,6 +97,23 @@ ES_PASSWORD = 'password'
 
 ## Development
 
+### Elasticsearch
+If you have [Docker Compose](https://docs.docker.com/compose/) installed, you
+can use the `docker-compose.yaml` file to start a local Elasticsearch instance
+for development:
+
+```shell
+$ docker-compose up
+```
+
+To use this Elasticsearch instance in your local Zubbi application, put
+the following in your `settings.cfg` file:
+```ini
+ES_HOST = 'localhost'
+ES_PORT = 9200
+```
+
+### Zubbi web
 Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
 [Pipenv](https://docs.pipenv.org/) installed
 
@@ -108,6 +125,7 @@ $ export FLASK_DEBUG=true
 $ flask run
 ```
 
+### Zubbi scraper
 The Zubbi scraper supports to different modes: `periodic` (default) and `immediate`.
 To start the scraper in periodic mode, simply run:
 
