@@ -92,6 +92,9 @@ class Scraper:
                 try:
                     last_changed = self.repo.last_changed(role_content.path)
                     existing_files = self.repo.list_directory(role_content.path)
+                    # Skip empty directories or files
+                    if not existing_files:
+                        continue
                     readme_file = self.find_matching_file(README_FILES, existing_files)
                     changelog_file = self.find_matching_file(
                         CHANGELOG_FILES, existing_files
