@@ -8,23 +8,21 @@ based CI system - even if they are spread over multiple tenants or repositories.
 
 ---
 
-*Contents:* **[Requirements](#requirements)** |
+*Contents:*
 **[Architecture](#architecture)** |
-**[Setup & Configuration](#setup--configuration)** |
 **[Development](#development)** |
-**[Quickstart](#quickstart)**
+**[Quickstart](#quickstart)** |
+**[Scraper usage](#scraper-usage)** |
+**[Configuration Examples](#configuration-examples)** |
+**[Available Connections](#available-connections)** |
 
 ---
-
-## Requirements
-- Elasticsearch
-- GitHub + GitHub App
 
 ## Architecture
 ![zubbi-architecture](https://github.com/bmwcarit/zubbi/raw/master/.github/zubbi-architecture.png)
 
 Zubbi consists of two parts, **zubbi web** and **zubbi scraper**. It uses
-**Elasticsearch** as storage backend and needs **GitHub repositories** as
+**Elasticsearch** as storage backend and needs **Git repositories** as
 source for job and role definitions.
 
 ### Zubbi web
@@ -34,81 +32,24 @@ including their documentation, last updates, changelog and some additional meta
 data.
 
 ### Zubbi scraper
-A Python application that scrapes GitHub repositories, searches for job and
+A Python application that scrapes Git repositories, searches for job and
 role definitions in specific files and stores them in Elasticsearch.
-
-## Setup & Configuration
-Both components read their configuration from the file path given via the
-`ZUBBI_SETTINGS` environment variable.
-
-```shell
-$ export ZUBBI_SETTINGS=$(pwd)/settings.cfg
-```
-
-An example with all available settings can be found in `settings.cfg.example`.
-
-### GitHub App
-To be able to scrape the necessary repositories from GitHub, you need to create a
-GitHub App with the following permissions:
-
-```yaml
-Repository contents: Read-only
-Repository metadata: Read-only
-```
-
-To activate GitHub webhooks, you have to provide a Weebhook URL pointing to
-the `/api/webhook` endpoint of your Zubbi Web installation. The generated Webhook
-secret must be specified in the `GITHUB_WEBHOOK_SECRET` setting.
-
-If you are unsure about how to set up a GitHub App, take a look at the
-[official guide](https://developer.github.com/apps/building-github-apps/creating-a-github-app/).
-
-Once you have successfully created your GitHub App, you can adapt the following
-values in your `settings.cfg` accordingly:
-
-```ini
-GITHUB_APP_ID = <your_github_app_id>
-GITHUB_APP_KEY = '<path_to_keyfile>'
-GITHUB_WEBHOOK_SECRET = '<secret>'
-```
-
-### Tenant Configuration
-Zubbi needs to know which projects contain the job and role definitions that
-are used inside the CI system. To achieve this, it uses Zuul's
-[tenant configuration](https://zuul-ci.org/docs/zuul/admin/tenants.html).
-Usually, this tenant configuration is stored in a file that must be specified
-in the `settings.cfg`, but it could also come from a repository.
-
-```ini
-# Use only one of the following, not both
-TENANT_SOURCES_REPO = '<orga>/<repo>'
-TENANT_SOURCES_FILE = '<path_to_the_yaml_file>'
-```
-
-### Elasticsearch Connection
-The Elasticsearch connection can be configured in the `settings.cfg` file like
-the following:
-
-```ini
-ES_HOST = '<elasticsearch_host>'
-ES_PORT = 9200
-ES_USER = 'user'
-ES_PASSWORD = 'password'
-```
 
 ## Development
 Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
 [Pipenv](https://docs.pipenv.org/) installed.
 
 To install necessary dependencies for development, run:
+
 ```shell
 $ pipenv shell
 $ pipenv install --dev
 ```
 
-We are using [black](https://github.com/ambv/black) to ensure well-formatted
-Python code. To automatically ensure well-formatted code each commit, you can
-use the included pre-commit hook. To install the commit hook, simply run:
+We are using [black](https://black.readthedocs.io/en/stable/) to ensure
+well-formatted Python code. To automatically ensure this on each commit, you can
+use the included pre-commit hook. To install the hook, simply run:
+
 ```shell
 $ pre-commit install
 ```
@@ -117,6 +58,47 @@ Before submitting pull requests, run tests and static code checks using tox:
 
 ```shell
 $ tox
+```
+
+### Installing & updating dependencies
+
+New dependencies should be added to the `requires` list in the `setup.py` file:
+
+```python
+requires = [
+    "arrow",
+    "click",
+    ...,
+    "<new dependency>",
+]
+```
+
+Afterwards, run the following command to update the `Pipfile.lock` and install the
+new dependencies in your local pipenv environment:
+
+```shell
+$ pipenv update
+```
+
+Test dependencies should be installed as development dependencies:
+
+```shell
+$ pipenv install --dev my-test-dependency
+```
+
+To update the dependencies to the latest version or after a new dependency was
+installed you have to run `tox -e update-requirements` and commit the changed
+Pipenv and requirements files.
+
+### Building the syntax highlighting stylesheet with pygments
+
+We are using a pre-build pygments stylesheet to highlight the code examples in
+job and roles documentations. In case you want to rebuild this syntax highlighting
+stylesheet (e.g. to try out another highlighting style) you can run the following
+command:
+
+```shell
+$ pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
 ```
 
 ## Quickstart
@@ -135,7 +117,18 @@ You can use the `docker-compose.yaml` file to start a local Elasticsearch instan
 $ docker-compose up
 ```
 
-To get a first set of data, put the following in `tenant-config.yaml`:
+Both - Zubbi scraper and Zubbi web - read their configuration from the file path
+given via the `ZUBBI_SETTINGS` environment variable:
+
+```shell
+$ export ZUBBI_SETTINGS=$(pwd)/settings.cfg
+```
+
+In order to show jobs and roles in Zubbi, we need to provide a minimal 
+[tenant configuration](https://zuul-ci.org/docs/zuul/admin/tenants.html)
+containing at least a single repository (which is used as source).
+Therefore, put the following in a `tenant-config.yaml` file:
+
 ```yaml
 - tenant:
     name: openstack
@@ -164,81 +157,174 @@ CONNECTIONS = {
 ```
 
 Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
-of building blocks into Zubbi/Elasticsearch:
+of jobs and roles into Elasticsearch and show them in Zubbi:
 
 ```shell
-$ zubbi-scrape scrape -f
+$ zubbi-scraper scrape --full
 ```
 
-Now we can start Zubbi web to take a look at (and search for) our data:
+When the scraper run was successful, we can start Zubbi web to take a look at
+our data:
+
 ```shell
 $ export FLASK_APP=zubbi
 $ export FLASK_DEBUG=true
 $ flask run
 ```
 
-### Zubbi scraper
-The Zubbi scraper supports to different modes: `periodic` (default) and `immediate`.
+## Scraper usage
+The Zubbi scraper supports two different modes: `periodic` (default) and `immediate`.
 To start the scraper in periodic mode, simply run:
 
 ```shell
-$ ./zubbi-scraper scrape
+$ zubbi-scraper scrape
 ```
-This should also scrape all necessary repositories for the first time.
 
-To immediately scrape one or more repositories (e.g. to update specific
-repositories), mostly used for development, run:
+This should also scrape all repositories specified in the tenant configuration
+for the first time.
+
+To immediately scrape one or more repositories, you can use the following command:
 
 ```shell
 # Scrape one or more repositories
-$ ./zubbi-scraper scrape --repo 'orga1/repo1' --repo 'orga1/repo2'
+$ zubbi-scraper scrape --repo 'orga1/repo1' --repo 'orga1/repo2'
 
 # Scrape all repositories
-$ ./zubbi-scraper scrape --full
+$ zubbi-scraper scrape --full
 ```
 
 Additionally, the scraper provides a `list-repos` command to list all
-available repositories and when they were scraped the last time:
-```shell
-$ ./zubbi-scrape list-repos
-```
-
-### Installing & updating dependencies
-
-New dependencies should be added to the `requires` list in the `setup.py` file:
-
-```python
-requires = [
-    "arrow",
-    "click",
-    ...,
-    "<new dependency>",
-]
-```
-
-Afterwards, run the following command update the `Pipfile.lock` and install the
-new dependencies in your local pipenv environment:
+available repositories together with some additional information like the
+last scraping timestamp and the git provider (connection type):
 
 ```shell
-$ pipenv update
+$ zubbi-scraper list-repos
 ```
 
-Test dependencies should be installed as development dependencies:
+## Configuration examples
+Examples for all available settings can be found in `settings.cfg.example`.
 
-```shell
-$ pipenv install --dev my-test-dependency
+### Tenant Configuration
+Zubbi needs to know which projects contain the job and role definitions that
+are used inside the CI system. To achieve this, it uses Zuul's
+[tenant configuration](https://zuul-ci.org/docs/zuul/admin/tenants.html).
+Usually, this tenant configuration is stored in a file that must be specified
+in the `settings.cfg`, but it could also come from a repository.
+
+```ini
+# Use only one of the following, not both
+TENANT_SOURCES_FILE = '<path_to_the_yaml_file>'
+TENANT_SOURCES_REPO = '<orga>/<repo>'
 ```
 
-To update the dependencies to the latest version or after a new dependency was
-installed you have to run `tox -e update-requirements` and commit the changed
-Pipenv and requirements files
+### Elasticsearch Connection
+The Elasticsearch connection can be configured in the `settings.cfg` like
+the following:
 
-### Building the syntax highlighting stylesheet with pygments
+```ini
+ES_HOST = '<elasticsearch_host>'
+ES_PORT = 9200
+ES_USER = '<user>'
+ES_PASSWORD = '<password>'
+```
 
-In case you want to rebuild the syntax highlighting stylesheet (e.g. to try
-out another highlighting style) you can run the following command:
-```shell
-$ pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
+## Available Connections
+Currently, Zubbi supports the following connection types: **GitHub**, **Gerrit**
+and **Git**. The latter one can be used for repositories that are not hosted on
+either GitHub or Gerrit.
+
+### GitHub
+The GitHub connection uses GitHub's REST API to scrape the repositories. To be
+able to use this connection, you need to create a GitHub App with the following
+permissions:
+
+```yaml
+Repository contents: Read-only
+Repository metadata: Read-only
+```
+
+If you are unsure about how to set up a GitHub App, take a look at the
+[official guide](https://developer.github.com/apps/building-github-apps/creating-a-github-app/).
+
+Once you have successfully created your GitHub App, you can define the connection
+with the following parameters in your `settings.cfg` accordingly:
+
+```ini
+CONNECTIONS = {
+    '<name>': {
+        'provider': 'github',
+        'url': '<github_url>',
+        'app_id': <your_github_app_id>,
+        'app_key': '<path_to_keyfile>',
+    },
+    ...
+}
+```
+
+#### Using GitHub Webhooks
+GitHub webhooks can be used to keep your Zubbi data up to date.
+To activate GitHub webhooks, you have to provide a weebhook URL pointing to
+the `/api/webhook` endpoint of your Zubbi web installation. The generated webhook
+secret must be specified in the `GITHUB_WEBHOOK_SECRET` setting in your `settings.cfg`:
+
+**NOTE:** As of now, GitHub webhooks are not supported on a per-connection base.
+You can only have one webhook active in zubbi.
+
+```ini
+GITHUB_WEBHOOK_SECRET = '<secret>'
+```
+
+Zubbi web receives webhook events from GitHub, validates the secret and publishes
+relevant events to the scraper via [ZMQ](https://pyzmq.readthedocs.io/en/latest/).
+The Zubbi scraper on the other hand subscribes to the ZMQ socket and scrapes
+necessary repositories whenever a event is received. In order to make this
+communication work, you need to specify the following parameters in your `settings.cfg`:
+
+```ini
+# Zubbi web (publish)
+ZMQ_PUB_SOCKET_ADDRESS = 'tcp://*:5556'
+# Zubbi scraper (subscribe)
+ZMQ_SUB_SOCKET_ADDRESS = 'tcp://localhost:5556'
+```
+
+### Gerrit
+In contrary to GitHub, the Gerrit connection is based on
+[GitPython](https://gitpython.readthedocs.io/en/stable/) as the Gerrit REST API
+does not support all use cases. To use this connection, you have
+to provide the following parameters in your `settings.cfg`:
+
+```ini
+CONNECTIONS = {
+    '<name>': {
+        'provider': 'gerrit',
+        'url': '<git_remote_url>',
+        # Only necessary if different from the git_remote_url
+        'web_url': '<gerrit_url>',
+        # Optional, if authentication is required
+        'user': '<username>',
+        'password': '<password',
+    },
+    ...
+}
+```
+
+### Git
+The Git connection is also based on
+[GitPython](https://gitpython.readthedocs.io/en/stable/) and can be used for Git
+repositories that are not hosted on either GitHub or Gerrit. To use this connection,
+put the following in your `settings.cfg`:
+
+```ini
+CONNECTIONS = {
+    '<name>': {
+        'provider': 'git',
+        'url': '<git_host_url>',
+        # Optional, if authentication is required
+        'user': '<username>',
+        'password': '<password',
+    },
+    ...
+}
 ```
 
 *Happy coding!*
