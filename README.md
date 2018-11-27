@@ -11,7 +11,8 @@ based CI system - even if they are spread over multiple tenants or repositories.
 *Contents:* **[Requirements](#requirements)** |
 **[Architecture](#architecture)** |
 **[Setup & Configuration](#setup--configuration)** |
-**[Development](#development)**
+**[Development](#development)** |
+**[Quickstart](#quickstart)**
 
 ---
 
@@ -96,30 +97,81 @@ ES_PASSWORD = 'password'
 ```
 
 ## Development
+Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
+[Pipenv](https://docs.pipenv.org/) installed.
 
-### Elasticsearch
-If you have [Docker Compose](https://docs.docker.com/compose/) installed, you
-can use the `docker-compose.yaml` file to start a local Elasticsearch instance
-for development:
+To install necessary dependencies for development, run:
+```shell
+$ pipenv shell
+$ pipenv install --dev
+```
+
+We are using [black](https://github.com/ambv/black) to ensure well-formatted
+Python code. To automatically ensure well-formatted code each commit, you can
+use the included pre-commit hook. To install the commit hook, simply run:
+```shell
+$ pre-commit install
+```
+
+Before submitting pull requests, run tests and static code checks using tox:
+
+```shell
+$ tox
+```
+
+## Quickstart
+Prerequisites: [Docker Compose](https://docs.docker.com/compose/) 
+
+If you followed the [Development](#development) guide, you should already have
+a virtual environment with all required dependencies to run Zubbi. If not, you
+could also install Zubbi via `pip` in an own virtualenv:
+```shell
+$ pip install zubbi
+```
+
+You can use the `docker-compose.yaml` file to start a local Elasticsearch instance:
 
 ```shell
 $ docker-compose up
 ```
 
-To use this Elasticsearch instance in your local Zubbi application, put
-the following in your `settings.cfg` file:
+To get a first set of data, put the following in `tenant-config.yaml`:
+```yaml
+- tenant:
+    name: openstack
+    source:
+      openstack-gerrit:
+        untrusted-projects:
+          - openstack-infra/zuul-jobs
+```
+
+Put the following in your `settings.cfg` to allow scraping based on the tenant
+configuration above and store the results in the local Elasticsearch instance.
+Please note, that the key in the `CONNECTIONS` dictionary must go in hand with
+the `source` names in the tenant configuration.
+
 ```ini
 ES_HOST = 'localhost'
 ES_PORT = 9200
+TENANT_SOURCES_FILE = 'tenant-config.yaml'
+
+CONNECTIONS = {
+    'openstack-gerrit': {
+        'provider': 'git',
+        'git_host_url': 'https://git.openstack.org',
+    },
+}
 ```
 
-### Zubbi web
-Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
-[Pipenv](https://docs.pipenv.org/) installed
+Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
+of building blocks into Zubbi/Elasticsearch:
 
-To start the basic Zubbi web application:
 ```shell
-$ pipenv shell
+$ zubbi-scrape scrape -f
+```
+
+Now we can start Zubbi web to take a look at (and search for) our data:
+```shell
 $ export FLASK_APP=zubbi
 $ export FLASK_DEBUG=true
 $ flask run
@@ -149,21 +201,6 @@ Additionally, the scraper provides a `list-repos` command to list all
 available repositories and when they were scraped the last time:
 ```shell
 $ ./zubbi-scrape list-repos
-```
-
-### Running tests & static checks
-
-We are using [black](https://github.com/ambv/black) to ensure well-formatted
-Python code. To ensure that your code is well-formatted on each commit, you can
-use the included pre-commit hook. To install the commit hook, simply run:
-```shell
-$ pre-commit install
-```
-
-Tests are run using tox:
-
-```shell
-$ tox
 ```
 
 ### Installing & updating dependencies

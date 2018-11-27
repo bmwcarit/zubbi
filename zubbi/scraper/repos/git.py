@@ -30,10 +30,11 @@ DEFAULT_BRANCH = "master"
 
 
 class GitRepository(Repository):
-    def __init__(self, repo_name, workspace_dir, remote_url):
+    def __init__(self, repo_name, git_con):
         self.repo_name = repo_name
-        self.workspace_dir = Path(workspace_dir)
-        self.remote_url = remote_url
+        self.workspace_dir = Path(git_con.workspace_dir)
+        # Build the remote url based on the gerrit connection parameters
+        self.remote_url = git_con.get_remote_url(repo_name)
         self._repo = self._get_repo_object(retry=True)
 
     def _get_repo_object(self, retry=False):
