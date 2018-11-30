@@ -21,9 +21,9 @@ LOGGER = logging.getLogger(__name__)
 
 class GitConnection:
     def __init__(
-        self, git_host_url, user=None, password=None, workspace="/tmp/zubbi_working_dir"
+        self, url, user=None, password=None, workspace="/tmp/zubbi_working_dir"
     ):
-        self.git_host_url = git_host_url
+        self.git_host_url = url
 
         # TODO Support password via envvar (like in zapfel)
         self.user = user
