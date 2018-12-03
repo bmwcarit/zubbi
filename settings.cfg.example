@@ -42,7 +42,7 @@ TENANT_SOURCES_FILE = 'tenant-config.yaml'
 
 ZMQ_PUB_SOCKET_ADDRESS = 'tcp://*:5556'
 ZMQ_SUB_SOCKET_ADDRESS = 'tcp://localhost:5556'
-# Timeout in milliseconds (5 min)
-ZMQ_SUB_TIMEOUT = 300000  # default
+# Timeout in seconds (5 min)
+ZMQ_SUB_TIMEOUT = 300  # default
 # Interval after which a repo will be scraped in any case (in hours)
 FORCE_SCRAPE_INTERVAL = 24  # default
