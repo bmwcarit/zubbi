@@ -236,10 +236,10 @@ def scrape(ctx, full, repo):
         while True:
             if socket is None:
                 LOGGER.debug(
-                    "No ZMQ socket configured. Just going to wait for 5 minutes."
+                    "No ZMQ socket configured. Just going to wait for %d seconds.",
+                    timeout,
                 )
-                # Timeout is in milliseconds, but sleep uses seconds
-                time.sleep(timeout / 1000)
+                time.sleep(timeout)
             else:
                 # Check for incoming messages on ZMQ
                 LOGGER.debug("Checking for incoming ZMQ messages")
@@ -270,7 +270,8 @@ def create_zmq_socket(socket_addr, timeout):
         socket = context.socket(zmq.SUB)
         socket.connect(socket_addr)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        socket.setsockopt(zmq.RCVTIMEO, timeout)
+        # Timeout is in seconds, but ZMQ uses milliseconds
+        socket.setsockopt(zmq.RCVTIMEO, timeout * 1000)
     return socket
 
 
