@@ -234,6 +234,11 @@ def scrape(ctx, full, repo):
         socket = create_zmq_socket(socket_addr, timeout)
 
         while True:
+            # Check if a periodic run is necessary
+            LOGGER.debug("Checking for outdated repos")
+            scrape_outdated(config, connections, tenant_parser, repo_cache)
+
+            # Listen to ZMQ messages (if configured) or wait
             if socket is None:
                 LOGGER.debug(
                     "No ZMQ socket configured. Just going to wait for %d seconds.",
@@ -257,10 +262,6 @@ def scrape(ctx, full, repo):
                     # If no message was received until the timeout, ZMQ throws
                     # zmq.error.Again: Resource temporarily unavailable
                     LOGGER.debug("Did not receive any ZMQ message")
-
-            # Check if a periodic run is necessary
-            LOGGER.debug("Checking for outdated repos")
-            scrape_outdated(config, connections, tenant_parser, repo_cache)
 
 
 def create_zmq_socket(socket_addr, timeout):
