@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import sys
+import time
 from collections import namedtuple
 from datetime import datetime, timedelta, timezone
 
@@ -228,33 +229,51 @@ def scrape(ctx, full, repo):
         scrape_full(connections, tenant_parser, repos=repo)
     else:
         # Listen to ZMQ messages
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
-        socket.connect(config["ZMQ_SUB_SOCKET_ADDRESS"])
-        socket.setsockopt_string(zmq.SUBSCRIBE, "")
-        socket.setsockopt(zmq.RCVTIMEO, config["ZMQ_SUB_TIMEOUT"])
+        socket_addr = config.get("ZMQ_SUB_SOCKET_ADDRESS")
+        timeout = config.get("ZMQ_SUB_TIMEOUT")
+        socket = create_zmq_socket(socket_addr, timeout)
 
         while True:
-            # Check for incoming messages on ZMQ
-            LOGGER.debug("Checking for incoming ZMQ messages")
-            try:
-                event, payload = socket.recv_multipart()
-                handle_event(
-                    event.decode("utf-8"),
-                    json.loads(payload.decode("utf-8")),
-                    config,
-                    connections,
-                    tenant_parser,
-                    repo_cache,
-                )
-            except zmq.error.Again:
-                # If no message was received until the timeout, ZMQ throws
-                # zmq.error.Again: Resource temporarily unavailable
-                LOGGER.debug("Did not receive any ZMQ message")
-
             # Check if a periodic run is necessary
             LOGGER.debug("Checking for outdated repos")
             scrape_outdated(config, connections, tenant_parser, repo_cache)
+
+            # Listen to ZMQ messages (if configured) or wait
+            if socket is None:
+                LOGGER.debug(
+                    "No ZMQ socket configured. Just going to wait for %d seconds.",
+                    timeout,
+                )
+                time.sleep(timeout)
+            else:
+                # Check for incoming messages on ZMQ
+                LOGGER.debug("Checking for incoming ZMQ messages")
+                try:
+                    event, payload = socket.recv_multipart()
+                    handle_event(
+                        event.decode("utf-8"),
+                        json.loads(payload.decode("utf-8")),
+                        config,
+                        connections,
+                        tenant_parser,
+                        repo_cache,
+                    )
+                except zmq.error.Again:
+                    # If no message was received until the timeout, ZMQ throws
+                    # zmq.error.Again: Resource temporarily unavailable
+                    LOGGER.debug("Did not receive any ZMQ message")
+
+
+def create_zmq_socket(socket_addr, timeout):
+    socket = None
+    if socket_addr and timeout:
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.connect(socket_addr)
+        socket.setsockopt_string(zmq.SUBSCRIBE, "")
+        # Timeout is in seconds, but ZMQ uses milliseconds
+        socket.setsockopt(zmq.RCVTIMEO, timeout * 1000)
+    return socket
 
 
 def init_connections(config):

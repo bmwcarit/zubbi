@@ -17,7 +17,7 @@ SEARCH_BATCH_LIMIT = 30
 
 
 # Scraper defaults
-# Timeout in milliseconds (5 min)
-ZMQ_SUB_TIMEOUT = 300000
+# Timeout in seconds (5 min)
+ZMQ_SUB_TIMEOUT = 300
 # Interval after which a repo will be scraped in any case (in hours)
 FORCE_SCRAPE_INTERVAL = 24
