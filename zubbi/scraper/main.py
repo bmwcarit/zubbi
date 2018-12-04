@@ -480,14 +480,6 @@ def _scrape_repo_map(
         LOGGER.info("Updating %d repo definitions in Elasticsearch", len(es_repos))
         GitRepo.bulk_save(es_repos)
     else:
-        LOGGER.info("Deleting the following repositories: %s", repo_list)
-        # NOTE (fschmidt): Usually, this should not delete anything we just scraped.
-        # Just to be sure, we will execute this only if delete_only is set.
-        delete_outdated(
-            scrape_time,
-            [GitRepo],
-            extra_filter=Q({"terms": {"repo_name.keyword": repo_list}}),
-        )
         # Delete the repositories from the repo_cache
         for repo_name in repo_list:
             repo_cache.pop(repo_name, None)
@@ -497,6 +489,14 @@ def _scrape_repo_map(
     LOGGER.info("Deleting outdated data for the following repositories: %s", repo_list)
     delete_outdated(
         scrape_time, [AnsibleRole, ZuulJob], extra_filter=Q("terms", repo=repo_list)
+    )
+
+    LOGGER.info("Deleting the following repositories (only if outdated): %s", repo_list)
+    # NOTE (fschmidt): Usually, this should not delete anything we just scraped.
+    delete_outdated(
+        scrape_time,
+        [GitRepo],
+        extra_filter=Q({"terms": {"repo_name.keyword": repo_list}}),
     )
 
 
