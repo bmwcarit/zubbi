@@ -432,6 +432,9 @@ def _scrape_repo_map(
                     repo_name,
                     connection_name,
                 )
+                # NOTE (felix): Remove the repo from the repo_list, so the outdated
+                # data (which would be all data in this case) won't be deleted.
+                repo_list.remove(repo_name)
                 continue
             provider = con.provider
             repo_class = REPOS.get(provider)
@@ -475,6 +478,7 @@ def _scrape_repo_map(
 
     # In both cases we want to delete outdated data.
     # In case of delete_only, this will be everything!
+    # NOTE (felix): In case of a config error, the repo is removed from this list
     LOGGER.info("Deleting outdated data for the following repositories: %s", repo_list)
     delete_outdated(
         scrape_time, [AnsibleRole, ZuulJob], extra_filter=Q("terms", repo=repo_list)
