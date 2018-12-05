@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import pytest
+import requests_mock
 from elasticsearch_dsl.connections import connections
 
 import zubbi
@@ -182,6 +183,31 @@ def github_response_access_token():
         "expires_at": datetime.strftime(expires_future, "%Y-%m-%dT%H:%M:%SZ"),
     }
     return response
+
+
+@pytest.fixture(scope="function")
+def mock_github_api_endpoints(
+    github_response_installations,
+    github_response_repositories,
+    github_response_access_token,
+):
+    github_api_url = "https://github.example.com/api/v3"
+
+    with requests_mock.Mocker() as m:
+        # Mock necessary GitHub API endpoints
+        m.get(
+            "{}/app/installations".format(github_api_url),
+            json=github_response_installations,
+        )
+        m.get(
+            "{}/installation/repositories?per_page=100".format(github_api_url),
+            json=github_response_repositories,
+        )
+        m.post(
+            "{}/installations/94/access_tokens".format(github_api_url),
+            json=github_response_access_token,
+        )
+        yield m
 
 
 @pytest.fixture(scope="function")
