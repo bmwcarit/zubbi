@@ -19,6 +19,7 @@ import pytest
 
 import zubbi
 from zubbi.scraper.connections.gerrit import GerritConnection
+from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.connections.github import GitHubConnection
 from zubbi.scraper.main import init_connections
 
@@ -70,13 +71,11 @@ def test_init_github_con(patch_es, mock_github_api_endpoints):
                 "app_id": 3,
                 "app_key": os.path.join(
                     os.path.dirname(os.path.realpath(__file__)),
-                    "../testdata/app_key_file",
+                    "../../testdata/app_key_file",
                 ),
             }
         },
     }
-
-    connections = init_connections(config)
 
     expected_con_data = {
         "base_url": "https://github.example.com",
@@ -85,8 +84,37 @@ def test_init_github_con(patch_es, mock_github_api_endpoints):
         "app_id": 3,
     }
 
+    connections = init_connections(config)
     github_con = connections["github_con"]
     assert isinstance(github_con, GitHubConnection)
     # Check that the expected data is a subset of the connection's underlying dict
     for key, val in expected_con_data.items():
         assert val == github_con.__dict__[key]
+
+
+def test_init_git_con(patch_es):
+    config = {
+        "ES_HOST": "localhost",
+        "CONNECTIONS": {
+            "git_con": {
+                "provider": "git",
+                "url": "https://localhost/git",
+                # Optional, if authentication is required
+                "user": "foo",
+                "password": "bar",
+            }
+        },
+    }
+
+    expected_con_data = {
+        "git_host_url": "https://localhost/git",
+        "user": "foo",
+        "password": "bar",
+        "workspace_dir": "/tmp/zubbi_working_dir",
+    }
+
+    connections = init_connections(config)
+    git_con = connections["git_con"]
+
+    assert isinstance(git_con, GitConnection)
+    assert expected_con_data == git_con.__dict__
