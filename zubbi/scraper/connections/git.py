@@ -42,7 +42,9 @@ class GitConnection:
         # Currently, we don't need to do anything
 
     def get_remote_url(self, repository_name):
-        # TODO (felix) Find a better way to rebuild the url with auth values
+        # TODO (felix): Find a better way to rebuild the url with auth values
+        # TODO (felix): Currently, this method requires the git_host_url to
+        # provide a schema (e.g. https://)
         scheme, _, url = self.git_host_url.partition("://")
 
         if self.user and self.password:
