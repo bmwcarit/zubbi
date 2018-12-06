@@ -18,6 +18,7 @@ from pathlib import Path
 from git import Repo
 from git.exc import GitCommandError, InvalidGitRepositoryError
 
+from zubbi.scraper.exceptions import CheckoutError
 from zubbi.scraper.repos import Repository
 
 
@@ -70,9 +71,12 @@ class GitRepository(Repository):
         return repo
 
     def check_out_file(self, file_path):
-        LOGGER.debug("Checking out '%s'", file_path)
-        content = self._repo.git.show("{}:{}".format(DEFAULT_BRANCH, file_path))
-        return content
+        try:
+            LOGGER.debug("Checking out '%s'", file_path)
+            content = self._repo.git.show("{}:{}".format(DEFAULT_BRANCH, file_path))
+            return content
+        except GitCommandError as e:
+            raise CheckoutError(file_path, e.stderr)
 
     def list_directory(self, directory_path):
         LOGGER.debug("Listing contents of '%s' directory", directory_path)
@@ -86,12 +90,14 @@ class GitRepository(Repository):
                 directory_path = "{}/".format(directory_path)
             command.append(directory_path)
 
-        files = self._repo.git.execute(command).split()
-
-        # To be compatible with the current GitHub implementation, the resulting
-        # dictionary must provide the filename as key and a Contents-like object
-        # as value.
-        return {Path(f).name: FileContent(f) for f in files}
+        try:
+            files = self._repo.git.execute(command).split()
+            # To be compatible with the current GitHub implementation, the resulting
+            # dictionary must provide the filename as key and a Contents-like object
+            # as value.
+            return {Path(f).name: FileContent(f) for f in files}
+        except GitCommandError as e:
+            raise CheckoutError(directory_path, e.stderr)
 
     def last_changed(self, path):
         # TODO Implement...
