@@ -67,7 +67,6 @@ class GitRepository(Repository):
             LOGGER.info("Retrying clone/fetch once")
             return self._get_repo_object()
 
-        # TODO How to skip this repository in the scraper/parser if repo is None?
         return repo
 
     def check_out_file(self, file_path):
