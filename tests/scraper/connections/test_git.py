@@ -12,35 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import contextlib
-from pathlib import Path
-
 import pytest
 from git import Repo
 
 from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.exceptions import CheckoutError
 from zubbi.scraper.repos.git import FileContent, GitRepository
-
-
-@contextlib.contextmanager
-def mock_git_repo(workspace, repo_name, url):
-    # TODO (felix): This should be moved to a fixture (although it would be nice
-    # to have the repo name and url configurable)
-    repo_workspace = Path(workspace) / repo_name
-    mocked_repo = Repo.init(repo_workspace)
-    mocked_repo.create_remote("origin", url)
-
-    # Create a readme file and commit it to master
-    readme = repo_workspace / "README"
-    readme.write_text("Repository: {}".format(repo_name))
-    mocked_repo.index.add([str(readme)])
-    mocked_repo.index.commit("Initial commit")
-
-    yield mocked_repo
-
-    # TODO (felix): Usually we should do a cleanup here, but as this function is
-    # currently only called with a tmpdir, we can do that later on.
 
 
 @pytest.mark.parametrize(
@@ -56,7 +33,7 @@ def test_get_remote_url(url, repo_name, expected):
     assert remote_url == expected
 
 
-def test_get_repo_object_existing_path(tmpdir):
+def test_get_repo_object_existing_path(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -76,7 +53,7 @@ def test_get_repo_object_failure(tmpdir):
     assert git_repo._repo is None
 
 
-def test_check_out_file(tmpdir):
+def test_check_out_file(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -88,7 +65,7 @@ def test_check_out_file(tmpdir):
         assert contents == "Repository: foo"
 
 
-def test_check_out_non_existing_file(tmpdir):
+def test_check_out_non_existing_file(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -101,7 +78,7 @@ def test_check_out_non_existing_file(tmpdir):
         assert "Failed to check out 'non-existing-file'" in str(excinfo.value)
 
 
-def test_list_directory(tmpdir):
+def test_list_directory(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -116,7 +93,7 @@ def test_list_directory(tmpdir):
         assert readme_contents.path == "README"
 
 
-def test_list_non_existing_directory(tmpdir):
+def test_list_non_existing_directory(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
