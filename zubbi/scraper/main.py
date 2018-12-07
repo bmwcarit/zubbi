@@ -545,7 +545,7 @@ def delete_outdated(scrape_time, indices, extra_filter=None):
 # TODO (fschmidt): Maybe it's worth to move the event_* methods to a GitHubEventHandler
 # class or similar. This way, we could encapsulate different events in their respective
 # environment (e.g. GitHub, Gerrit, ...)
-def handle_event(event, payload, config, connections, tenant_parser, repo_cache):
+def handle_event(event, payload, connections, tenant_parser, repo_cache):
     LOGGER.info("Handling event '%s'", event)
     try:
         # TODO (fschmidt): Maybe we should change this file/module to be a class
@@ -562,14 +562,14 @@ def handle_event(event, payload, config, connections, tenant_parser, repo_cache)
         # TODO (fschmidt): What about 'repository' events?
         # To get updates for public/private?
         # https://developer.github.com/v3/activity/events/types/#repositoryevent
-        method(payload, config, connections, tenant_parser, repo_cache)
+        method(payload, connections, tenant_parser, repo_cache)
     except Exception:
         # TODO (fschmidt): Does it make sense to catch an Exception here?
         # Could we catch anything more specific?
         LOGGER.exception("Error while handling event '%s'", event)
 
 
-def event_installation(payload, config, connections, tenant_parser, repo_cache):
+def event_installation(payload, connections, tenant_parser, repo_cache):
     action = payload.get("action")
     installation_id = payload.get("installation", {}).get("id")
     repositories = payload.get("repositories", [])
@@ -614,9 +614,7 @@ def event_installation(payload, config, connections, tenant_parser, repo_cache):
         # TODO (fschmidt): Should we remove them also from the installatino map?
 
 
-def event_installation_repositories(
-    payload, config, connections, tenant_parser, repo_cache
-):
+def event_installation_repositories(payload, connections, tenant_parser, repo_cache):
     installation_id = payload.get("installation", {}).get("id")
     repos_added = payload.get("repositories_added")
     repos_removed = payload.get("repositories_removed")
@@ -660,7 +658,7 @@ def event_installation_repositories(
         )
 
 
-def event_push(payload, config, connections, tenant_parser, repo_cache):
+def event_push(payload, connections, tenant_parser, repo_cache):
     repo_name = payload.get("repository", {}).get("full_name")
     # installation_id = payload.get('installation', {}).get('id')
     ref = payload.get("ref")
