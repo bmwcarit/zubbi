@@ -14,13 +14,10 @@
 
 from datetime import datetime
 
-import requests_mock
-
 from zubbi.scraper.connections.github import GitHubConnection
 
 
 GITHUB_URL = "https://github.example.com"
-GITHUB_API_URL = "{}/api/v3".format(GITHUB_URL)
 
 GITHUB_CON_CONFIG = {
     "app_id": 1,
@@ -40,38 +37,19 @@ def test_get_app_auth_headers():
     assert result["Authorization"].startswith("Bearer ")
 
 
-def test_get_installation_key(
-    github_response_installations,
-    github_response_repositories,
-    github_response_access_token,
-):
+def test_get_installation_key(mock_github_api_endpoints):
 
     # Initialize GitHubConnection
     gh_con = GitHubConnection(**GITHUB_CON_CONFIG)
     gh_con._authenticate()
 
-    with requests_mock.Mocker() as m:
-        # Mock necessary GitHub API endpoints
-        m.get(
-            "{}/app/installations".format(GITHUB_API_URL),
-            json=github_response_installations,
-        )
-        m.get(
-            "{}/installation/repositories?per_page=100".format(GITHUB_API_URL),
-            json=github_response_repositories,
-        )
-        m.post(
-            "{}/installations/94/access_tokens".format(GITHUB_API_URL),
-            json=github_response_access_token,
-        )
+    # Calling prime_install_map() includes get_installation_key()
+    gh_con._prime_install_map()
+    token_from_cache, expires_at = gh_con.installation_token_cache[94]
 
-        # Calling prime_install_map() includes get_installation_key()
-        gh_con._prime_install_map()
-        token_from_cache, expires_at = gh_con.installation_token_cache[94]
-
-        # Call get_installation_key() for a specific project (should read from
-        # the cache)
-        token_for_project = gh_con._get_installation_key(project="orga/foo_repo")
+    # Call get_installation_key() for a specific project (should read from
+    # the cache)
+    token_for_project = gh_con._get_installation_key(project="orga/foo_repo")
 
     expected_installation_map = {
         "orga/foo_repo": {"default_branch": "master", "installation_id": 94},

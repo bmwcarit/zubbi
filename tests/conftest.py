@@ -185,6 +185,30 @@ def github_response_access_token():
 
 
 @pytest.fixture(scope="function")
+def mock_github_api_endpoints(
+    requests_mock,
+    github_response_installations,
+    github_response_repositories,
+    github_response_access_token,
+):
+    github_api_url = "https://github.example.com/api/v3"
+
+    # Mock necessary GitHub API endpoints
+    requests_mock.get(
+        "{}/app/installations".format(github_api_url),
+        json=github_response_installations,
+    )
+    requests_mock.get(
+        "{}/installation/repositories?per_page=100".format(github_api_url),
+        json=github_response_repositories,
+    )
+    requests_mock.post(
+        "{}/installations/94/access_tokens".format(github_api_url),
+        json=github_response_access_token,
+    )
+
+
+@pytest.fixture(scope="function")
 def readme_python_code():
     return raw_file("readmes/python-code.rst")
 

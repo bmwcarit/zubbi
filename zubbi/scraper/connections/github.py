@@ -14,11 +14,12 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urljoin
 
 import github3
 import jwt
 import requests
+
+from zubbi.utils import urljoin
 
 
 PREVIEW_JSON_ACCEPT = "application/vnd.github.machine-man-preview+json"
