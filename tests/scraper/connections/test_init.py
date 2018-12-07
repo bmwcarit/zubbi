@@ -62,12 +62,13 @@ def test_init_gerrit_con(patch_es):
 
 def test_init_github_con(patch_es, mock_github_api_endpoints):
 
+    mock_github_api_endpoints("https://localhost/github")
     config = {
         "ES_HOST": "localhost",
         "CONNECTIONS": {
             "github_con": {
                 "provider": "github",
-                "url": "https://github.example.com",
+                "url": "https://localhost/github",
                 "app_id": 3,
                 "app_key": os.path.join(
                     os.path.dirname(os.path.realpath(__file__)),
@@ -78,9 +79,9 @@ def test_init_github_con(patch_es, mock_github_api_endpoints):
     }
 
     expected_con_data = {
-        "base_url": "https://github.example.com",
-        "api_url": "https://github.example.com/api/v3",
-        "graphql_url": "https://github.example.com/api/graphql",
+        "base_url": "https://localhost/github",
+        "api_url": "https://localhost/github/api/v3",
+        "graphql_url": "https://localhost/github/api/graphql",
         "app_id": 3,
     }
 
