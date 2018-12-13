@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bmwcarit/zubbi.svg?branch=master)](https://travis-ci.org/bmwcarit/zubbi)
+
 ![Welcome to the Zuul Building Blocks Index](https://github.com/bmwcarit/zubbi/raw/master/.github/zubbi-index.png)
 
 <br/>
