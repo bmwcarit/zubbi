@@ -56,21 +56,17 @@ def test_render_sphinx_python_code(readme_python_code):
 
 def test_render_sphinx_yaml_code(readme_yaml_code):
     expected_code = (
-        '<div class="highlight-yaml notranslate">'
-        '<div class="highlight"><pre><span></span>'
-        '<span class="p p-Indicator">-</span>'
-        ' <span class="l l-Scalar l-Scalar-Plain">job</span>'
-        '<span class="p p-Indicator">:</span>\n'
-        '    <span class="l l-Scalar l-Scalar-Plain">name</span>'
-        '<span class="p p-Indicator">:</span>'
+        '<div class="highlight-yaml notranslate"><div class="highlight">'
+        '<pre><span></span><span class="p p-Indicator">-</span>'
+        ' <span class="nt">job</span><span class="p">:</span>\n'
+        '    <span class="nt">name</span><span class="p">:</span>'
         ' <span class="l l-Scalar l-Scalar-Plain">foo</span>\n'
-        '    <span class="l l-Scalar l-Scalar-Plain">parent</span>'
-        '<span class="p p-Indicator">:</span>'
+        '    <span class="nt">parent</span><span class="p">:</span>'
         ' <span class="l l-Scalar l-Scalar-Plain">bar</span>\n'
-        '    <span class="l l-Scalar l-Scalar-Plain">playbook</span>'
-        '<span class="p p-Indicator">:</span>'
+        '    <span class="nt">playbook</span><span class="p">:</span>'
         ' <span class="l l-Scalar l-Scalar-Plain">foo-bar.yaml</span>\n'
-        "</pre></div>\n</div>\n"
+        "</pre></div>\n"
+        "</div>\n"
     )
 
     result = render_sphinx(readme_yaml_code)
