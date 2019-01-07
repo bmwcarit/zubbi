@@ -130,6 +130,10 @@ def render_file(file_dict):
             LOGGER.warning(
                 "Content of %s could not be converted to HTML: %s", filepath, exc
             )
+        except LookupError:
+            LOGGER.exception(
+                "Sphinx build failed. Most probably due to the usage of an invalid Sphinx directive or Zuul variable type."
+            )
     elif filepath.lower().endswith(".md"):
         LOGGER.debug("Rendering markdown description")
         doc = render_markdown(content)
