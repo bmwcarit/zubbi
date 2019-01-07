@@ -306,7 +306,7 @@ def scrape_outdated(config, connections, tenant_parser, repo_cache):
     # Check the repo cache for entries older than 24 hours
     for key, val in repo_cache.items():
         # TODO We should clean up repos containing 'None' providers some time
-        if val["scrape_time"] < threshold and val["provider"] is not None:
+        if val["scrape_time"] < threshold and val.get("provider") is not None:
             repo_list.append(key)
 
     if repo_list:
