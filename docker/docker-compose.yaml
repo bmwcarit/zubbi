@@ -1,0 +1,48 @@
+version: '3'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+
+  zubbi-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - elasticsearch
+    networks:
+      - esnet
+    # Let the zubbi-scraper do an initial full scrape
+    command: zubbi-scraper scrape --full
+    # Starting zubbi-scraper will fail until Elasticsearch is up and running.
+    # But run it only once
+    restart: on-failure
+
+  zubbi-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      # flask runs on port 5000 per default
+      - 5000:5000
+    depends_on:
+      - elasticsearch
+    networks:
+      - esnet
+    # Starting zubbi-web will fail until Elasticsearch is up and running
+    restart: always
+
+volumes:
+  esdata:
+    driver: local
+
+networks:
+  esnet:
