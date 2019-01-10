@@ -106,6 +106,40 @@ $ pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
 ## Quickstart
 Prerequisites: [Docker Compose](https://docs.docker.com/compose/) 
 
+If you just want to get a first version of Zubbi up and running, you can follow
+the [docker-compose](#docker-compose) section. If you are more interested in the details, how
+everything is set up and which configuration files are required, take a look at
+the [manual](#manual) section.
+
+### docker-compose
+
+---
+
+**NOTE**
+The provided `Dockerfile` and the `docker-compose.yaml` files should only be used
+for demonstration purposes and not in a production system. Flask is running in
+development mode and listens on all public IPs to make it reachable from outside
+the docker container.
+
+---
+
+To get the whole stack up and running, simply do the following:
+```shell
+$ cd docker
+$ docker-compose build
+$ docker-compose up
+```
+
+This will build the docker container with the newest Zubbi version, start all
+necessary services (Elasticsearch, zubbi-scraper, zubbi-web) and does an initial
+full scrape on the `openstack-infra/zuul-jobs` repository to get an inital set of
+data.
+
+When everything is up, you can visit `http://localhost:5000` and explore the jobs
+and roles from the `openstack-infra/zuul-jobs` repo.
+
+### Manual
+
 If you followed the [Development](#development) guide, you should already have
 a virtual environment with all required dependencies to run Zubbi. If not, you
 could also install Zubbi via `pip` in an own virtualenv:
@@ -116,7 +150,8 @@ $ pip install zubbi
 You can use the `docker-compose.yaml` file to start a local Elasticsearch instance:
 
 ```shell
-$ docker-compose up
+$ cd docker
+$ docker-compose up elasticsearch
 ```
 
 Both - Zubbi scraper and Zubbi web - read their configuration from the file path
