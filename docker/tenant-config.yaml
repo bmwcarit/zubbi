@@ -1,0 +1,6 @@
+- tenant:
+    name: openstack
+    source:
+      openstack-gerrit:
+        untrusted-projects:
+          - openstack-infra/zuul-jobs
