@@ -1,6 +1,6 @@
 # Application files
 instance/
-settings.cfg
+/settings.cfg
 .env
 
 # Binaries
