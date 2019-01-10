@@ -1,0 +1,38 @@
+{
+  "action": "created",
+  "installation": {
+    "id": 147
+  },
+  "repositories": [
+    {
+      "id": 69,
+      "name": "testsub1",
+      "full_name": "zubbi-oss/testsub1",
+      "private": false
+    },
+    {
+      "id": 70,
+      "name": "testsub2",
+      "full_name": "zubbi-oss/testsub2",
+      "private": false
+    },
+    {
+      "id": 71,
+      "name": "testbase1",
+      "full_name": "zubbi-oss/testbase1",
+      "private": false
+    },
+    {
+      "id": 1694,
+      "name": "demo",
+      "full_name": "zubbi-oss/demo",
+      "private": true
+    },
+    {
+      "id": 2277,
+      "name": "testsub3",
+      "full_name": "playground/testsub3",
+      "private": false
+    }
+  ]
+}

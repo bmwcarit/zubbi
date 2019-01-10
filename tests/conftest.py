@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 from datetime import datetime, timedelta, timezone
 from unittest import mock
@@ -224,6 +225,24 @@ def readme_yaml_code():
 @pytest.fixture(scope="function")
 def readme_supported_os():
     return raw_file("readmes/supported-os.rst")
+
+
+@pytest.fixture(scope="function")
+def payload_webhook_installation_created():
+    content = raw_file("payloads/github-webhook-installation-created.json")
+    return json.loads(content)
+
+
+@pytest.fixture(scope="function")
+def payload_webhook_installation_deleted():
+    content = raw_file("payloads/github-webhook-installation-deleted.json")
+    return json.loads(content)
+
+
+@pytest.fixture(scope="function")
+def payload_webhook_push():
+    content = raw_file("payloads/github-webhook-push.json")
+    return json.loads(content)
 
 
 @pytest.fixture(scope="function")
