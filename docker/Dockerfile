@@ -7,8 +7,6 @@ WORKDIR /opt
 
 RUN apk add --no-cache openssl-dev curl zeromq git python3
 
-COPY settings.cfg tenant-config.yaml ./
-
 # Packages needed to build the cffi python package which is needed by cryptography
 RUN apk add --no-cache --virtual .build-deps \
         libffi-dev \
@@ -18,6 +16,8 @@ RUN apk add --no-cache --virtual .build-deps \
     && pip3 install --no-cache zubbi \
     # Delete build dependencies
     && apk del .build-deps
+
+COPY settings.cfg tenant-config.yaml ./
 
 VOLUME /opt/instance
 
