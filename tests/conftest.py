@@ -191,21 +191,24 @@ def mock_github_api_endpoints(
     github_response_repositories,
     github_response_access_token,
 ):
-    github_api_url = "https://github.example.com/api/v3"
+    def _github_api(github_url):
+        github_api_url = urljoin(github_url, "api/v3")
 
-    # Mock necessary GitHub API endpoints
-    requests_mock.get(
-        "{}/app/installations".format(github_api_url),
-        json=github_response_installations,
-    )
-    requests_mock.get(
-        "{}/installation/repositories?per_page=100".format(github_api_url),
-        json=github_response_repositories,
-    )
-    requests_mock.post(
-        "{}/installations/94/access_tokens".format(github_api_url),
-        json=github_response_access_token,
-    )
+        # Mock necessary GitHub API endpoints
+        requests_mock.get(
+            "{}/app/installations".format(github_api_url),
+            json=github_response_installations,
+        )
+        requests_mock.get(
+            "{}/installation/repositories?per_page=100".format(github_api_url),
+            json=github_response_repositories,
+        )
+        requests_mock.post(
+            "{}/installations/94/access_tokens".format(github_api_url),
+            json=github_response_access_token,
+        )
+
+    return _github_api
 
 
 @pytest.fixture(scope="function")
