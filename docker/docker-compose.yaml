@@ -12,6 +12,20 @@ services:
     networks:
       - esnet
 
+  zubbi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      # flask runs on port 5000 per default
+      - 5000:5000
+    depends_on:
+      - elasticsearch
+    networks:
+      - esnet
+    # We need to "wait" until Elasticsearch is up and running
+    restart: always
+
 volumes:
   esdata:
     driver: local

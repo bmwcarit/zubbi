@@ -1,3 +1,6 @@
+# NOTE: This Dockerfile should only be used for demonstration purposes and not
+# in a production system. Flask is running in development mode and listens on
+# all public IPs to make it reachable from outside the docker container.
 FROM alpine:3.7
 
 WORKDIR /opt
@@ -11,17 +14,19 @@ RUN apk add --no-cache --virtual .build-deps \
         libffi-dev \
         build-base \
         python3-dev \
+    # Install zubbi from PyPI
     && pip3 install --no-cache zubbi \
+    # Delete build dependencies
     && apk del .build-deps
 
 VOLUME /opt/instance
-VOLUME /var/share/zubbi
 
 ENV ZUBBI_INSTANCE_PATH=/opt/instance
 ENV ZUBBI_SETTINGS=/opt/settings.cfg
 ENV FLASK_APP=zubbi
+
 # flask runs on port 5000 per default
-#EXPOSE 5000
+EXPOSE 5000
 
 # NOTE (fschmidt): The --host option is necessary, to reach flask from outside
 # the docker container
