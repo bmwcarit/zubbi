@@ -12,7 +12,21 @@ services:
     networks:
       - esnet
 
-  zubbi:
+  zubbi-scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - elasticsearch
+    networks:
+      - esnet
+    # Let the zubbi-scraper do an initial full scrape
+    command: zubbi-scraper scrape --full
+    # Starting zubbi-scraper will fail until Elasticsearch is up and running.
+    # But run it only once
+    restart: on-failure
+
+  zubbi-web:
     build:
       context: .
       dockerfile: Dockerfile
@@ -23,7 +37,7 @@ services:
       - elasticsearch
     networks:
       - esnet
-    # We need to "wait" until Elasticsearch is up and running
+    # Starting zubbi-web will fail until Elasticsearch is up and running
     restart: always
 
 volumes:
