@@ -12,8 +12,8 @@ based CI system - even if they are spread over multiple tenants or repositories.
 
 *Contents:*
 **[Architecture](#architecture)** |
-**[Development](#development)** |
 **[Quickstart](#quickstart)** |
+**[Development](#development)** |
 **[Scraper usage](#scraper-usage)** |
 **[Configuration Examples](#configuration-examples)** |
 **[Available Connections](#available-connections)** |
@@ -36,6 +36,35 @@ data.
 ### Zubbi scraper
 A Python application that scrapes Git repositories, searches for job and
 role definitions in specific files and stores them in Elasticsearch.
+
+## Quickstart
+Prerequisites: [Docker Compose](https://docs.docker.com/compose/)
+
+Zubbi can simply be started by using the provided `docker-compose.yaml` file.
+
+---
+
+**NOTE**
+The provided `Dockerfile` should only be used for demonstration purposes and not
+in a production system. Flask is running in development mode and listens on all
+public IPs to make it reachable from outside the docker container.
+
+---
+
+To get the whole stack up and running, do the following:
+```shell
+$ cd docker
+$ docker-compose build
+$ docker-compose up
+```
+
+This will build the docker container with the newest Zubbi version, start all
+necessary services (Elasticsearch, zubbi-scraper, zubbi-web) and does a full
+scrape of the `openstack-infra/zuul-jobs` repository to get an initial set of
+data.
+
+When everything is up, you can visit `http://localhost:5000` and explore the jobs
+and roles from the `openstack-infra/zuul-jobs` repo.
 
 ## Development
 Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
@@ -92,33 +121,25 @@ To update the dependencies to the latest version or after a new dependency was
 installed you have to run `tox -e update-requirements` and commit the changed
 Pipenv and requirements files.
 
-### Building the syntax highlighting stylesheet with pygments
+### Configuring and starting Zubbi
+If you followed the [Development](#development) guide so far, you should already
+have a virtual environment with all required packages to run Zubbi. What's left,
+are a few configuration files and a local Elasticsearch instance for testing.
 
-We are using a pre-build pygments stylesheet to highlight the code examples in
-job and roles documentations. In case you want to rebuild this syntax highlighting
-stylesheet (e.g. to try out another highlighting style) you can run the following
-command:
-
-```shell
-$ pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
-```
-
-## Quickstart
-Prerequisites: [Docker Compose](https://docs.docker.com/compose/) 
-
-If you followed the [Development](#development) guide, you should already have
-a virtual environment with all required dependencies to run Zubbi. If not, you
-could also install Zubbi via `pip` in an own virtualenv:
-```shell
-$ pip install zubbi
-```
-
-You can use the `docker-compose.yaml` file to start a local Elasticsearch instance:
+#### Elasticsearch
+Zubbi is currently depending on Elasticsearch as data backend. If you have
+[Docker Compose](https://docs.docker.com/compose/) installed, you can use
+the provided `docker-compose.yaml` file to start Elasticsearch locally.
 
 ```shell
-$ docker-compose up
+$ cd docker
+$ docker-compose up elasticsearch
 ```
 
+If not, we recommend to use the latest available Elasticsearch Docker image, to
+get a local instance up and running for development.
+
+#### Configuration
 Both - Zubbi scraper and Zubbi web - read their configuration from the file path
 given via the `ZUBBI_SETTINGS` environment variable:
 
@@ -158,6 +179,7 @@ CONNECTIONS = {
 }
 ```
 
+#### Running Zubbi
 Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
 of jobs and roles into Elasticsearch and show them in Zubbi:
 
@@ -172,6 +194,17 @@ our data:
 $ export FLASK_APP=zubbi
 $ export FLASK_DEBUG=true
 $ flask run
+```
+
+### Building the syntax highlighting stylesheet with pygments
+
+We are using a pre-build pygments stylesheet to highlight the code examples in
+job and roles documentations. In case you want to rebuild this syntax highlighting
+stylesheet (e.g. to try out another highlighting style) you can run the following
+command:
+
+```shell
+$ pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
 ```
 
 ## Scraper usage
