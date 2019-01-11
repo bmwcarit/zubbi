@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: zubbi-ingress
+spec:
+  rules:
+    - host: zubbi.example.de
+      http:
+        paths:
+          - backend:
+              serviceName: zubbi
+              servicePort: 80
