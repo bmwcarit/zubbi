@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zubbi
+spec:
+  ports:
+    - port: 80
+      targetPort: 5000
+  selector:
+    app: zubbi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zubbi
+spec:
+  selector:
+    matchLabels:
+      app: zubbi
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: zubbi
+    spec:
+      containers:
+        - name: zubbi
+          image: example/zubbi
+          ports:
+            - containerPort: 5000
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cronjob-zubbi-scraper
+spec:
+  schedule: '0 12 * * *'
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: zubbi-scraper
+              image: example/zubbi
+              args:
+                - 'zubbi-scraper'
+                - 'scrape'
+                - '--full'
+          restartPolicy: OnFailure
