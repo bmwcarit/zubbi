@@ -26,19 +26,11 @@ class GerritRepository(GitRepository):
         super().__init__(repo_name, gerrit_con)
 
     def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
-        file_url = "{}?p={}.git;a=blob;f={}".format(
-            self.gerrit_con.gitweb_url, self.repo_name, file_path
+        return self.gerrit_con.web_url_builder.build_file_url(
+            self.repo_name, file_path, highlight_start, highlight_end
         )
-
-        if highlight_start is not None:
-            file_url = "{}#l{}".format(file_url, highlight_start)
-
-        # NOTE (fschmidt): highlighting a range is not supported by gerrit/gitweb
-
-        return file_url
 
     def url_for_directory(self, directory_path):
-        url = "{}?p={}.git;a=tree;f={}".format(
-            self.gerrit_con.gitweb_url, self.repo_name, directory_path
+        return self.gerrit_con.web_url_builder.build_directory_url(
+            self.repo_name, directory_path
         )
-        return url
