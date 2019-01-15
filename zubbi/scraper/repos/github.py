@@ -78,6 +78,8 @@ class GitHubRepository(Repository):
             return remote_directory
         except github3.exceptions.NotFoundError:
             raise CheckoutError(directory_path, "Directory not found.")
+        except github3.exceptions.UnprocessableResponseBody:
+            raise CheckoutError(directory_path, "Path is not a directory")
 
     def last_changed(self, path):
         LOGGER.debug("Getting last changes for '%s'", path)
