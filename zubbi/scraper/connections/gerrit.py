@@ -30,7 +30,6 @@ class CGitUrlBuilder:
 
         if highlight_start is not None:
             file_url = "{}#n{}".format(file_url, highlight_start)
-
         # NOTE (felix): highlighting a range is not supported by cgit
 
         return file_url
@@ -49,7 +48,6 @@ class GitwebUrlBuilder:
 
         if highlight_start is not None:
             file_url = "{}#l{}".format(file_url, highlight_start)
-
         # NOTE (felix): highlighting a range is not supported by gitweb
 
         return file_url

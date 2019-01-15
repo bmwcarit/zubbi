@@ -18,7 +18,7 @@ from unittest import mock
 import pytest
 
 import zubbi
-from zubbi.scraper.connections.gerrit import GerritConnection
+from zubbi.scraper.connections.gerrit import CGitUrlBuilder, GerritConnection
 from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.connections.github import GitHubConnection
 from zubbi.scraper.main import init_connections
@@ -50,14 +50,16 @@ def test_init_gerrit_con(patch_es):
         "password": "eggs",
         "workspace_dir": "/tmp/zubbi_working_dir",
         "base_url": "https://localhost/gerrit",
-        "gitweb_url": "https://localhost/gerrit-web/gitweb",
+        "gitweb_url": "https://localhost/gerrit-web",
+        "gitweb_type": "cgit",
     }
 
     connections = init_connections(config)
     gerrit_con = connections["gerrit_con"]
 
     assert isinstance(gerrit_con, GerritConnection)
-    assert gerrit_con.__dict__ == expected_con_data
+    assert isinstance(gerrit_con.web_url_builder, CGitUrlBuilder)
+    assert vars(gerrit_con) == expected_con_data
 
 
 def test_init_github_con(patch_es, mock_github_api_endpoints):
