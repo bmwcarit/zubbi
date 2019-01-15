@@ -15,6 +15,7 @@
 import logging
 
 from zubbi.scraper.connections.git import GitConnection
+from zubbi.scraper.exceptions import ScraperConfigurationError
 from zubbi.utils import urljoin
 
 
@@ -92,6 +93,10 @@ class GerritConnection(GitConnection):
     def get_web_url_builder(self, web_type, web_url, url):
         web_url = web_url or url
         url_builder_class = self.WEB_URL_BUILDERS.get(web_type)
-        if url_builder_class is not None:
-            return url_builder_class(web_url)
-        LOGGER.error("Unsupported web_type: ''", web_type)
+        if url_builder_class is None:
+            raise ScraperConfigurationError(
+                "Could not initialize Gerrit connection due to an unsupported web_type '{}'".format(
+                    web_type
+                )
+            )
+        return url_builder_class(web_url)
