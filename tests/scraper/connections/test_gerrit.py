@@ -12,33 +12,58 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from zubbi.scraper.connections.gerrit import GerritConnection
-from zubbi.scraper.repos.gerrit import GerritRepository
+import pytest
+
+from zubbi.scraper.connections.gerrit import CGitUrlBuilder, GitwebUrlBuilder
 
 
-def test_url_for_file(mock_git_repo, tmpdir):
-    git_url = "https://gerrit.example.com/"
-    repo_name = "bar"
+@pytest.mark.parametrize(
+    "gerrit_url, repo_name, file_path, highlight_start, expected",
+    [
+        (
+            "https://gerrit.example.com/",
+            "bar",
+            "roles/bar/README.md",
+            1,
+            "https://gerrit.example.com/bar/tree/roles/bar/README.md#n1",
+        ),
+        (
+            "git.example.org/cgit",
+            "foo",
+            "config.yaml",
+            None,
+            "git.example.org/cgit/foo/tree/config.yaml",
+        ),
+    ],
+)
+def test_url_for_file_cgit(gerrit_url, repo_name, file_path, highlight_start, expected):
+    url_builder = CGitUrlBuilder(gerrit_url)
+    file_url = url_builder.build_file_url(repo_name, file_path, highlight_start, None)
+    assert file_url == expected
 
-    with mock_git_repo(tmpdir, repo_name, git_url):
-        gerrit_con = GerritConnection(git_url, "user", "password", workspace=tmpdir)
-        gerrit_repo = GerritRepository(repo_name, gerrit_con)
 
-        file_url = gerrit_repo.url_for_file(
-            "README", highlight_start=4, highlight_end=9
-        )
-        assert (
-            file_url == "https://gerrit.example.com/gitweb?p=bar.git;a=blob;f=README#l4"
-        )
-
-
-def test_url_for_directory(mock_git_repo, tmpdir):
-    git_url = "https://gerrit.example.com/"
-    repo_name = "bar"
-
-    with mock_git_repo(tmpdir, repo_name, git_url):
-        gerrit_con = GerritConnection(git_url, "user", "password", workspace=tmpdir)
-        gerrit_repo = GerritRepository(repo_name, gerrit_con)
-
-        file_url = gerrit_repo.url_for_directory("roles")
-        assert file_url == "https://gerrit.example.com/gitweb?p=bar.git;a=tree;f=roles"
+@pytest.mark.parametrize(
+    "gerrit_url, repo_name, file_path, highlight_start, expected",
+    [
+        (
+            "https://gerrit.example.com/",
+            "bar",
+            "roles/bar/README.md",
+            1,
+            "https://gerrit.example.com/?p=bar.git;a=blob;f=roles/bar/README.md#l1",
+        ),
+        (
+            "git.example.org/gitweb",
+            "foo",
+            "config.yaml",
+            None,
+            "git.example.org/gitweb?p=foo.git;a=blob;f=config.yaml",
+        ),
+    ],
+)
+def test_url_for_file_gitweb(
+    gerrit_url, repo_name, file_path, highlight_start, expected
+):
+    url_builder = GitwebUrlBuilder(gerrit_url)
+    file_url = url_builder.build_file_url(repo_name, file_path, highlight_start, None)
+    assert file_url == expected
