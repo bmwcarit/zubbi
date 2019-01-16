@@ -24,9 +24,15 @@
   <div class="col-3">
     <div class="sidebar-section">
       <strong>Repository</strong><br>
-      <a href="{{ block.url }}" class="vertical-tab"><i class="fab fa-github"></i>
-      {{ block.repo }}
-      </a>
+      {% if block.url %}
+        <a href="{{ block.url }}" class="vertical-tab"><i class="fab fa-github"></i>
+          {{ block.repo }}
+        </a>
+      {% else %}
+        <span class="vertical-tab"><i class="fab fa-github"></i>
+            {{ block.repo }}
+        </span>
+      {% endif %}
     </div>
     <div class="sidebar-section">
       <strong>Platforms</strong>
