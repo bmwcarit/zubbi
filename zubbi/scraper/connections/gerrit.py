@@ -67,8 +67,8 @@ class GerritConnection(GitConnection):
     def __init__(
         self,
         url,
-        user,
-        password,
+        user=None,
+        password=None,
         workspace="/tmp/zubbi_working_dir",
         web_type="cgit",
         web_url=None,
@@ -78,9 +78,6 @@ class GerritConnection(GitConnection):
         self.gitweb_type = web_type
         self.gitweb_url = web_url or url
         self.web_url_builder = self.get_web_url_builder(web_type, web_url, url)
-
-        self.user = user
-        self.password = password
 
     def init(self):
         LOGGER.info("Initializing Gerrit connection to %s", self.base_url)
