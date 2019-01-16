@@ -1,6 +1,16 @@
 # Changelog
 
-## 1.0.0 - TBD
+## 1.1.0
+
+### New Features
+- Add support for `gitweb` and `cgit` as Gerrit web front-ends. Those are
+  necessary to build the correct URLs which are pointing to a job's or role's
+  definition file/directory in Gerrit.
+
+### Fixes
+- Make Gerrit credentials really optional
+
+## 1.0.0
 
 ### New Features
 - **Gerrit support:** Zubbi now supports scraping of Gerrit repositories. In
