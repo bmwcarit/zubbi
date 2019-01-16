@@ -335,9 +335,12 @@ CONNECTIONS = {
         'url': '<git_remote_url>',
         # Only necessary if different from the git_remote_url
         'web_url': '<gerrit_url>',
+        # The web_type is necessary to build the correct URLs for Gerrit.
+        # Currently supported types are 'cgit' (default) and 'gitweb'.
+        'web_type': 'cgit|gitweb',
         # Optional, if authentication is required
         'user': '<username>',
-        'password': '<password',
+        'password': '<password>',
     },
     ...
 }
