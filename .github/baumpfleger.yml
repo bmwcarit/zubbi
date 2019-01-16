@@ -1,0 +1,13 @@
+# Configuration for probot-baumfleger
+
+# Enabled? (optional, default false)
+enabled: true
+
+# glob or regex patterns that specify branches to ignore (optional)
+# ignore_branches:
+#   - sandfox/patch-*
+#   - /^sandfox-[0-9]/i
+
+# optional list of labels that if found on a pull request cause it to be ignored
+ignore_labels:
+  - keep-branch
