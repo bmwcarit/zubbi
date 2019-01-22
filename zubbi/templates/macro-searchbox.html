@@ -1,6 +1,6 @@
 {% macro search_box(inline_search=False) -%}
   <div class="input-group">
-    <input id="zubbi-search" type="text" name="query" class="form-control form-control-lg" {% if query -%} value="{{ query }}" {% endif -%}  placeholder="Search jobs &amp; roles" autocomplete="off">
+    <input id="zubbi-search" type="text" name="query" class="form-control form-control-lg" {% if query -%} value="{{ query }}" {% endif -%}  placeholder="Search jobs &amp; roles" autocomplete="off" {% if not inline_search %} autofocus {% endif %}>
     <span class="input-group-append">
       <button id="zubbi-search-btn" class="btn btn-outline-primary" type="submit"><i class="fas fa-search"></i>{%- if not inline_search %} Search{%- endif -%}</button>
     </span>
