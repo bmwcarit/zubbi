@@ -83,6 +83,9 @@ Search {%- if result is not none %} results for "{{ query }}"{%- endif %}
           <i class="fas fa-play-circle"></i>
         {% endif -%}
         {{ match|block_type|capitalize }}
+        {% if match.last_updated %}
+          <i class="float-right"><small>{{ match.last_updated | prettydate }}</small></i>
+        {% endif %}
       </div>
       <div class="card-body">
         <h5 class="card-title">
