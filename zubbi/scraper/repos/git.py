@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+from datetime import datetime
 from pathlib import Path
 
 from git import Repo
@@ -99,8 +100,13 @@ class GitRepository(Repository):
             raise CheckoutError(directory_path, e.stderr)
 
     def last_changed(self, path):
-        # TODO Implement...
-        pass
+        LOGGER.debug("Getting last changes for '%s'", path)
+        # We are only interested in the first (newest) commit
+        commits = self._repo.iter_commits(paths=path)
+        commit = next(commits)
+        last_changed = commit.committed_date
+        # We want to have a timezone-aware date
+        return datetime.utcfromtimestamp(last_changed)
 
     def blame(self, path):
         # TODO Implement...
