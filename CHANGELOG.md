@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 (TBD)
+
+### New Features
+- **Gerrit/Git:** Get last update information via commit history and blame info
+  for jobs and roles. So far, this was only available for GitHub repositories.
+- **UI:** Autofocus the search field on index page. You can now visit Zubbi and
+  directly start typing
+- **UI:** Show "last update" timestamps for jobs and roles in search results
+
 ## 1.1.0
 
 ### New Features
