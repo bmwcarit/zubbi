@@ -58,9 +58,7 @@ class GitRepository(Repository):
                 )
         else:
             try:
-                repo = Repo.clone_from(
-                    self.remote_url, repo_src_path, bare=True, depth=1
-                )
+                repo = Repo.clone_from(self.remote_url, repo_src_path, bare=True)
             except GitCommandError as e:
                 LOGGER.error("Cloning repo '%s' failed: %s" % (self.repo_name, e))
 
