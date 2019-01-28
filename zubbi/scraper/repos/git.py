@@ -107,8 +107,33 @@ class GitRepository(Repository):
         return datetime.utcfromtimestamp(last_changed)
 
     def blame(self, path):
-        # TODO Implement...
-        pass
+        LOGGER.debug("Getting blame info for '%s'", path)
+        blame_info = self._repo.blame_incremental(DEFAULT_BRANCH, path)
+        # We have to build an equivalent result like for the github repo class
+        flat_blame = []
+        while True:
+            # TODO (felix): Convert this to a normal for loop, once GitPython deals
+            # with the StopIteration by itself. The fix is already there but not released yet:
+            # https://github.com/gitpython-developers/GitPython/issues/794 and
+            # https://github.com/gitpython-developers/GitPython/pull/793/
+            try:
+                blame_entry = next(blame_info)
+                flat_blame.append(
+                    {
+                        "start": blame_entry.linenos.start,
+                        "end": blame_entry.linenos.stop - 1,
+                        "date": datetime.utcfromtimestamp(
+                            blame_entry.commit.committed_date
+                        ),
+                    }
+                )
+            except RuntimeError:
+                # NOTE (felix): See my comment above.
+                # This is actually a StopIteration which is raised as a RuntimeError,
+                # because GitPython is using a while loop and doesn't take care of the
+                # StopIteration by itself.
+                break
+        return flat_blame
 
     def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
         # NOTE (fschmidt): This does not make sense for plain git repositories.
