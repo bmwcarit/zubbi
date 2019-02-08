@@ -291,7 +291,14 @@ def init_connections(config):
         # config keys. Abstraction for e.g. the following:
         # gh_con = GitHubConnection(**con_data)
         # connections['github'] = gh_con
-        con_class = CONNECTIONS.get(con_data.pop("provider"))
+        provider = con_data.pop("provider")
+        con_class = CONNECTIONS.get(provider)
+        if not con_class:
+            raise ScraperConfigurationError(
+                "Could not init connection '{}'. Specified provider '{}' is not"
+                " available.".format(con_name, provider)
+            )
+
         con = con_class(**con_data)
         con.init()
         connections[con_name] = con
