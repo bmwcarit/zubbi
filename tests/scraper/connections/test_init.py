@@ -146,3 +146,17 @@ def test_init_git_con(patch_es):
 
     assert isinstance(git_con, GitConnection)
     assert expected_con_data == git_con.__dict__
+
+
+def test_init_con_invalid_provider(patch_es):
+    config = {
+        "ES_HOST": "localhost",
+        "CONNECTIONS": {"invalid_con": {"provider": "invalid"}},
+    }
+
+    with pytest.raises(ScraperConfigurationError) as excinfo:
+        init_connections(config)
+    assert (
+        "Could not init connection 'invalid_con'. Specified provider 'invalid' is not available"
+        in str(excinfo)
+    )
