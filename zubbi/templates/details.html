@@ -86,6 +86,7 @@
           {% if block.changelog is defined %}
               <li class="nav-item"><a class="nav-link {% if not block.changelog %}disabled{% endif %}" href="#changelog">Changelog</a></li>
           {% endif %}
+          {% block additional_content_tab_headers %}{% endblock %}
       </ul>
 
       <div class="tab-content">
@@ -95,6 +96,7 @@
           <div id="changelog" class="tab-pane">
               {% include 'includes/block-changelog.html' %}
           </div>
+          {% block additional_content_tabs %}{% endblock %}
       </div>
 </div>
 {% endblock %}

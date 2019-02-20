@@ -117,7 +117,7 @@ a.vertical-tab:hover {
 }
 
 /* Description on details page */
-.block-description, .block-changelog {
+.block-tab-content {
     padding: 1.25rem .5rem;
 }
 
