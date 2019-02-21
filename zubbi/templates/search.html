@@ -92,7 +92,7 @@ Search {%- if result is not none %} results for "{{ query }}"{%- endif %}
           {{ match.name }}
         </h5>
         <h6 class="card-subtitle mb-2 text-muted">{{ match.repo }}</h6>
-        <p class="card-text">{% if match.description %}{{ match.description_rendered.split('\n')|first|striptags }}{% endif %}</p>
+        <p class="card-text">{% if match.description_rendered %}{{ match.description_rendered.split('\n')|first|striptags }}{% endif %}</p>
         <a href="{{ url_for('zubbi.details', repo=match.repo, block_type=match|block_type, name=match.name) }}" class="btn btn-primary"><i class="fas fa-info-circle"></i> Show details</a>
       </div>
     </div>
