@@ -1,7 +1,7 @@
 # NOTE: This Dockerfile should only be used for demonstration purposes and not
 # in a production system. Flask is running in development mode and listens on
 # all public IPs to make it reachable from outside the docker container.
-FROM alpine:3.7
+FROM alpine:3.9
 
 WORKDIR /opt
 
