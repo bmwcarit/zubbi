@@ -16,7 +16,7 @@ import os
 
 from flask import Blueprint, Flask
 
-from . import default_settings
+from .config import init_configuration
 from .helpers import init_helpers, make_error_handler
 from .models import init_elasticsearch
 from .views import (
@@ -46,9 +46,7 @@ class ZubbiBlueprint(Blueprint):
         self.record_once(self._init_blueprint_once)
 
     def _init_blueprint(self, state):
-        for key in dir(default_settings):
-            if key.isupper():
-                state.app.config.setdefault(key, getattr(default_settings, key))
+        init_configuration(state.app.config)
         init_helpers(state.app)
 
     def _init_blueprint_once(self, state):

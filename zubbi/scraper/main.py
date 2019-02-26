@@ -28,8 +28,8 @@ from elasticsearch_dsl import Q
 from flask.config import Config
 from tabulate import tabulate
 
-from zubbi import default_settings
-from zubbi import ZUBBI_SETTINGS_ENV
+from zubbi import default_settings, ZUBBI_SETTINGS_ENV
+from zubbi.config import init_configuration
 from zubbi.models import (
     AnsibleRole,
     GitRepo,
@@ -140,6 +140,8 @@ def main(ctx, verbosity):
     config = Config(root_path=".")
     config.from_object(default_settings)
     config.from_envvar(ZUBBI_SETTINGS_ENV)
+
+    init_configuration(config)
 
     # Validate the configuration
     tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
