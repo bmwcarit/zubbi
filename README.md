@@ -140,6 +140,7 @@ If not, we recommend to use the latest available Elasticsearch Docker image, to
 get a local instance up and running for development.
 
 #### Configuration
+
 Both - Zubbi scraper and Zubbi web - read their configuration from the file path
 given via the `ZUBBI_SETTINGS` environment variable:
 
@@ -147,7 +148,7 @@ given via the `ZUBBI_SETTINGS` environment variable:
 $ export ZUBBI_SETTINGS=$(pwd)/settings.cfg
 ```
 
-In order to show jobs and roles in Zubbi, we need to provide a minimal 
+In order to show jobs and roles in Zubbi, we need to provide a minimal
 [tenant configuration](https://zuul-ci.org/docs/zuul/admin/tenants.html)
 containing at least a single repository (which is used as source).
 Therefore, put the following in a `tenant-config.yaml` file:
@@ -178,6 +179,31 @@ CONNECTIONS = {
     },
 }
 ```
+
+Also you can set variables in you os environment
+
+>
+    ES_HOST
+    ES_INDEX_PREFIX
+    ES_USERNAME
+    ES_PASSWORD
+    ES_PORT
+    FORCE_SCRAPE_INTERVAL
+    GITHUB_WEBHOOK_ADDRESS
+    SEARCH_BATCH_SIZE
+    SEARCH_BATCH_LIMIT
+    TENANT_SOURCES_FILE
+    ZMP_SUB_SOCKET_ADDRESS
+    ZMP_PUB_SOCKET_ADDRESS
+    ZMQ_SUB_TIMEOUT
+
+The order of precedence is:
+ 1. Default values
+ 2. Configuration file
+ 3. Environment variables
+
+##### Knowledge
+`ES_INDEX_PREFIX` is only available to override in os enviroment
 
 #### Running Zubbi
 Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
