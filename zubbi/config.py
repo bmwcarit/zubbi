@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os import environ
+import logging
 
+from os import environ
 from . import default_settings
 
 ENVIRONMENT_VARIABLES_AVAILABLE = [
@@ -32,23 +33,23 @@ ENVIRONMENT_VARIABLES_AVAILABLE = [
 ]
 
 ES_INDEX_PREFIX = environ.get("ES_INDEX_PREFIX", "")
-
+LOGGER = logging.getLogger(__name__)
 
 def init_configuration(config):
-
     _default_configuration(config)
     _environment_configuration(config)
 
 
 def _default_configuration(config):
-
     for key in dir(default_settings):
         if key.isupper():
             config.setdefault(key, getattr(default_settings, key))
 
 
 def _environment_configuration(config):
-
     for key in ENVIRONMENT_VARIABLES_AVAILABLE:
         if key in environ:
             config[key] = environ.get(key)
+            LOGGER.warning(
+                "The key %s is overrided by environment", key
+            )
