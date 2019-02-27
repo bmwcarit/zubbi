@@ -138,7 +138,6 @@ def main(ctx, verbosity):
 
     # Load the configurations from file
     config = Config(root_path=".")
-    config.from_object(default_settings)
     config.from_envvar(ZUBBI_SETTINGS_ENV)
 
     init_configuration(config)
