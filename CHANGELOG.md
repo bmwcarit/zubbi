@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.2.0
+
+### New Features
+- **UI:** Autofocus the search field on index page. You can now visit Zubbi and
+  directly start typing.
+- **UI:** Show "last update" timestamps for jobs and roles in search results.
+- **Extensions:** Allow custom tabs/contents on details page. When extending Zubbi,
+  someone can now add new tabs (in addition to the already existing 'Description'
+  and 'Changelog').
+
+### Fixes
+- **UI:** Use rendered description in search result cards to hide unparsable
+  Sphinx links.
+
+
 ## 1.1.0
 
 ### New Features
