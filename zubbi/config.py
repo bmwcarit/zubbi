@@ -18,6 +18,7 @@ from os import environ
 from . import default_settings
 
 ENVIRONMENT_VARIABLES_AVAILABLE = [
+    "CONNECTIONS",
     "ES_HOST",
     "ES_USERNAME",
     "ES_PASSWORD",
@@ -51,5 +52,5 @@ def _environment_configuration(config):
         if key in environ:
             config[key] = environ.get(key)
             LOGGER.warning(
-                "The key %s is overrided by environment", key
+                "  -> The key %s is overrided by environment", key
             )
