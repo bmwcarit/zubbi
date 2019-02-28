@@ -28,7 +28,7 @@ from elasticsearch_dsl import Q
 from flask.config import Config
 from tabulate import tabulate
 
-from zubbi import default_settings, ZUBBI_SETTINGS_ENV
+from zubbi import ZUBBI_SETTINGS_ENV
 from zubbi.config import init_configuration
 from zubbi.models import (
     AnsibleRole,

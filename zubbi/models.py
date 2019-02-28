@@ -25,8 +25,6 @@ from elasticsearch_dsl import (
     Text,
 )
 
-from zubbi.config import ES_INDEX_PREFIX
-
 DEFAULT_ES_PORT = 9200
 DEFAULT_SUGGEST_SIZE = 5
 
@@ -59,7 +57,7 @@ class ZuulTenant(ZubbiDoc):
     tenant_name = Text()
 
     class Index:
-        name = ES_INDEX_PREFIX + "zuul-tenants"
+        name = "zuul-tenants"
 
 
 class GitRepo(ZubbiDoc):
@@ -67,7 +65,7 @@ class GitRepo(ZubbiDoc):
     provider = Text()
 
     class Index:
-        name = ES_INDEX_PREFIX + "git-repos"
+        name = "git-repos"
 
 
 class Block(ZubbiDoc):
@@ -120,7 +118,7 @@ class AnsibleRole(Block):
     changelog_html = Text()
 
     class Index:
-        name = ES_INDEX_PREFIX + "ansible-roles"
+        name = "ansible-roles"
 
     @property
     def name(self):
@@ -146,7 +144,7 @@ class ZuulJob(Block):
     line_end = Integer()
 
     class Index:
-        name = ES_INDEX_PREFIX + "zuul-jobs"
+        name = "zuul-jobs"
 
     @property
     def name(self):

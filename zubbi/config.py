@@ -13,9 +13,10 @@
 # limitations under the License.
 
 import logging
-
 from os import environ
+
 from . import default_settings
+
 
 ENVIRONMENT_VARIABLES_AVAILABLE = [
     "CONNECTIONS",
@@ -33,8 +34,8 @@ ENVIRONMENT_VARIABLES_AVAILABLE = [
     "ZMQ_SUB_TIMEOUT",
 ]
 
-ES_INDEX_PREFIX = environ.get("ES_INDEX_PREFIX", "")
 LOGGER = logging.getLogger(__name__)
+
 
 def init_configuration(config):
     _default_configuration(config)
@@ -51,6 +52,4 @@ def _environment_configuration(config):
     for key in ENVIRONMENT_VARIABLES_AVAILABLE:
         if key in environ:
             config[key] = environ.get(key)
-            LOGGER.warning(
-                "  -> The key %s is overrided by environment", key
-            )
+            LOGGER.warning("  -> The key %s is overrided by environment", key)
