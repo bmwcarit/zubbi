@@ -82,6 +82,31 @@ def test_elasticsearch_init_with_prefix(elmock):
 
 
 @mock.patch("elasticsearch_dsl.connections.Elasticsearch")
+def test_elasticsearch_init_with_prefix_multi(elmock):
+
+    # Define the existing indices for the mock
+    existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
+    elmock.return_value.indices.exists.side_effect = (
+        lambda index: index in existing_indices
+    )
+
+    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+
+    # Evenv if we called the init() method multiple times, the index should only be
+    # prepended once.
+    checked_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
+    }
+    assert {
+        "zubbi-zuul-jobs",
+        "zubbi-ansible-roles",
+        "zubbi-zuul-tenants",
+        "zubbi-git-repos",
+    } == checked_indices
+
+
+@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
 def test_elasticsearch_write(elmock):
     init_elasticsearch_con("127.0.0.1", "user", "password")
 
