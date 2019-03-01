@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0
+
+### New Features
+- **Experimental:** You can set an `ES_INDEX_PREFIX` in the `settings.cfg` file to
+  prefix all Elasticsearch indices with a custom value. This could be useful to avoid
+  name clashes if indices with the same name are already used by another part of the
+  system.
+
 ## 1.2.0
 
 ### New Features
@@ -13,7 +21,6 @@
 ### Fixes
 - **UI:** Use rendered description in search result cards to hide unparsable
   Sphinx links.
-
 
 ## 1.1.0
 
