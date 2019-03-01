@@ -282,8 +282,11 @@ def init_elasticsearch_con(
         # up in messy index names
         es_index_prefix = es_index_prefix.rstrip("-")
         for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
-            # idx_cls.Index.name = "{}-{}".format(es_index_prefix, idx_cls.Index.name)
-            idx_cls._index._name = "{}-{}".format(es_index_prefix, idx_cls._index._name)
+            # NOTE (felix): Index.name seems to hold the constant value that we defined
+            # in our index-meta class for the document. _index._name on the other hand
+            # holds the active value. Thus, we can use this to ensure that the prefix
+            # is only prepended once, even if we call this method multiple times.
+            idx_cls._index._name = "{}-{}".format(es_index_prefix, idx_cls.Index.name)
 
     ZuulJob.init()
     AnsibleRole.init()
