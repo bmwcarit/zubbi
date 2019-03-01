@@ -1,11 +1,32 @@
 from unittest import mock
 
+import elasticsearch_dsl
+import pytest
 from elasticsearch_dsl.serializer import serializer
 
-from zubbi.models import init_elasticsearch_con, ZuulTenant
+from zubbi.models import (
+    AnsibleRole,
+    GitRepo,
+    init_elasticsearch_con,
+    ZuulJob,
+    ZuulTenant,
+)
 
 
-@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
+@pytest.fixture(scope="function")
+def elmock():
+    with mock.patch.object(elasticsearch_dsl.connections, "Elasticsearch") as _elmock:
+        yield _elmock
+
+    # Reset the name of each index to its original value as it might have changed
+    # during the tests. Btw, this clearly shows that this is a hack ;-)
+    for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
+        # As the Index.name attribute holds the constant value from the original
+        # definition, we can use it to reset the active value which might have
+        # changed due to the es_index_prefix hack.
+        idx_cls._index._name = idx_cls.Index.name
+
+
 def test_elasticsearch_init(elmock):
 
     # Define the existing indices for the mock
@@ -43,7 +64,6 @@ def test_elasticsearch_init(elmock):
     assert {"zuul-tenants", "git-repos"} == created_indices
 
 
-@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
 def test_elasticsearch_init_with_prefix(elmock):
 
     # Define the existing indices for the mock
@@ -81,7 +101,6 @@ def test_elasticsearch_init_with_prefix(elmock):
     assert {"zubbi-zuul-tenants", "zubbi-git-repos"} == created_indices
 
 
-@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
 def test_elasticsearch_init_with_prefix_multi(elmock):
 
     # Define the existing indices for the mock
@@ -106,7 +125,6 @@ def test_elasticsearch_init_with_prefix_multi(elmock):
     } == checked_indices
 
 
-@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
 def test_elasticsearch_write(elmock):
     init_elasticsearch_con("127.0.0.1", "user", "password")
 
@@ -118,7 +136,6 @@ def test_elasticsearch_write(elmock):
     )
 
 
-@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
 def test_elasticsearch_write_with_prefix(elmock):
     init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
 
