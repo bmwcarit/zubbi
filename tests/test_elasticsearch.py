@@ -1,0 +1,105 @@
+from unittest import mock
+
+from elasticsearch_dsl.serializer import serializer
+
+from zubbi.models import init_elasticsearch_con, ZuulTenant
+
+
+@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
+def test_elasticsearch_init(elmock):
+
+    # Define the existing indices for the mock
+    existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
+    elmock.return_value.indices.exists.side_effect = (
+        lambda index: index in existing_indices
+    )
+
+    init_elasticsearch_con("127.0.0.1", "user", "password")
+
+    # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
+    # was called with the correct arguments.
+    assert elmock.call_args == mock.call(
+        host="127.0.0.1",
+        port=9200,
+        http_auth=("user", "password"),
+        serializer=serializer,
+    )
+
+    # Validate that all necessary indices were checked for existence
+    checked_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
+    }
+    assert {
+        "zuul-jobs",
+        "ansible-roles",
+        "zuul-tenants",
+        "git-repos",
+    } == checked_indices
+
+    # Validate that only the missing indices were created
+    created_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.create.call_args_list
+    }
+    assert {"zuul-tenants", "git-repos"} == created_indices
+
+
+@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
+def test_elasticsearch_init_with_prefix(elmock):
+
+    # Define the existing indices for the mock
+    existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
+    elmock.return_value.indices.exists.side_effect = (
+        lambda index: index in existing_indices
+    )
+
+    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+
+    # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
+    # was called with the correct arguments.
+    assert elmock.call_args == mock.call(
+        host="127.0.0.1",
+        port=9200,
+        http_auth=("user", "password"),
+        serializer=serializer,
+    )
+
+    # Validate that all necessary indices were checked for existence
+    checked_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
+    }
+    assert {
+        "zubbi-zuul-jobs",
+        "zubbi-ansible-roles",
+        "zubbi-zuul-tenants",
+        "zubbi-git-repos",
+    } == checked_indices
+
+    # Validate that only the missing indices were created
+    created_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.create.call_args_list
+    }
+    assert {"zubbi-zuul-tenants", "zubbi-git-repos"} == created_indices
+
+
+@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
+def test_elasticsearch_write(elmock):
+    init_elasticsearch_con("127.0.0.1", "user", "password")
+
+    zt = ZuulTenant(name="foo")
+    zt.save()
+
+    assert elmock.return_value.index.call_args == mock.call(
+        doc_type="doc", index="zuul-tenants", body=zt.to_dict()
+    )
+
+
+@mock.patch("elasticsearch_dsl.connections.Elasticsearch")
+def test_elasticsearch_write_with_prefix(elmock):
+    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+
+    zt = ZuulTenant(name="foo")
+    zt.save()
+
+    assert elmock.return_value.index.call_args == mock.call(
+        doc_type="doc", index="zubbi-zuul-tenants", body=zt.to_dict()
+    )
