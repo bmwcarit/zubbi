@@ -143,7 +143,7 @@ def test_parse(repo_data):
         'class="headerlink" href="#rolevar-list_variable" '
         'title="Permalink to this definition">¶</a><br />Default: '
         '<code class="docutils literal notranslate"><span '
-        'class="pre">[]</span></code><br /></dt>\n'
+        'class="pre">[]</span></code><br />Type: <em>list</em><br /></dt>\n'
         "<dd><p>This one must be a list.</p>\n"
         "</dd></dl>\n"
         "\n",
