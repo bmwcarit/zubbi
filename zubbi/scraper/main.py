@@ -283,6 +283,7 @@ def init_connections(config):
         config.get("ES_USER"),
         config.get("ES_PASSWORD"),
         config.get("ES_PORT"),
+        config.get("ES_INDEX_PREFIX"),
     )
 
     connections = {}

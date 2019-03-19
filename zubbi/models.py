@@ -247,6 +247,7 @@ def init_elasticsearch(app):
         app.config.get("ES_USER"),
         app.config.get("ES_PASSWORD"),
         app.config.get("ES_PORT"),
+        app.config.get("ES_INDEX_PREFIX"),
     )
 
     app.add_template_test(role_type)
@@ -254,7 +255,9 @@ def init_elasticsearch(app):
     app.add_template_filter(block_type)
 
 
-def init_elasticsearch_con(host, user=None, password=None, port=None):
+def init_elasticsearch_con(
+    host, user=None, password=None, port=None, es_index_prefix=None
+):
     http_auth = None
     # Set authentication parameters if available
     if user and password:
@@ -262,6 +265,28 @@ def init_elasticsearch_con(host, user=None, password=None, port=None):
     if port is None:
         port = DEFAULT_ES_PORT
     connections.create_connection(host=host, http_auth=http_auth, port=port)
+
+    # NOTE (felix): Hack to override the index names with prefix from config
+    # TODO (felix): Remove this once https://github.com/elastic/elasticsearch-dsl-py/pull/1099
+    # is merged and use the pattern described in the elasticsearch-dsl documentation
+    # https://elasticsearch-dsl.readthedocs.io/en/latest/persistence.html#index
+    #
+    # Unfortunately, this pattern is currently only working for document.init(),
+    # while the search() and save() methods will still use the original index name
+    # set in the index-meta class.
+    # This unexpected behaviour is also described in
+    # https://github.com/elastic/elasticsearch-dsl-py/issues/1121 and
+    # https://github.com/elastic/elasticsearch-dsl-py/issues/1091.
+    if es_index_prefix is not None:
+        # If the user set a '-' at the end of the prefix, we don't want to end
+        # up in messy index names
+        es_index_prefix = es_index_prefix.rstrip("-")
+        for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
+            # NOTE (felix): Index.name seems to hold the constant value that we defined
+            # in our index-meta class for the document. _index._name on the other hand
+            # holds the active value. Thus, we can use this to ensure that the prefix
+            # is only prepended once, even if we call this method multiple times.
+            idx_cls._index._name = "{}-{}".format(es_index_prefix, idx_cls.Index.name)
 
     ZuulJob.init()
     AnsibleRole.init()

@@ -3,6 +3,9 @@ ES_HOST = '<elasticsearch_host>'
 ES_PORT = 9200  # default
 ES_USER = '<user>'
 ES_PASSWORD = '<password>'
+# Optional, to avoid name clashes with existing ES indices from other applications
+# E.g. 'zubbi' will result in indices like 'zubbi-zuul-jobs', 'zubbi-ansible-roles', ...
+ES_INDEX_PREFIX = '<prefix>'
 
 # Scraper configuration
 # NOTE: The connection names must go in hand with the ones used in the tenant
