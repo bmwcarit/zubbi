@@ -673,6 +673,22 @@ def event_push(payload, config, connections, tenant_parser, repo_cache):
     gh_con = connections["github"]
 
     repo_info = gh_con.installation_map.get(repo_name)
+    if not repo_info:
+        # If the repo is not part of our installation map, we might have missed the create/add event.
+        # TODO (felix): Thus, we could reinit the GitHub connection (for this installation only?) to and try it again
+        LOGGER.info(
+            "Repo '%s' is not part of our installation map, we might have missed an event. "
+            "Reinitialising installation map",
+            repo_name,
+        )
+        gh_con._prime_install_map()
+        repo_info = gh_con.installation_map.get(repo_name)
+        if not repo_info:
+            LOGGER.error(
+                "Repo '%s' still not part of our installation map, something went wrong. Skip scraping."
+            )
+            return
+
     default_branch = repo_info["default_branch"]
 
     # TODO validate installation id from payload against installation map?
