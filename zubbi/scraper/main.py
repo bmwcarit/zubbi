@@ -574,8 +574,14 @@ def event_installation(payload, connections, tenant_parser, repo_cache):
     installation_id = payload.get("installation", {}).get("id")
     repositories = payload.get("repositories", [])
 
+    LOGGER.info(
+        "Handling installation event with action '%s' for installation %d",
+        action,
+        installation_id,
+    )
+
     if action == "created":
-        LOGGER.info("Scraping new installation %d", installation_id)
+        LOGGER.info("Scraping repos for new installation %d", installation_id)
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repositories]
         # Scrape them
@@ -597,10 +603,10 @@ def event_installation(payload, connections, tenant_parser, repo_cache):
         if not repositories:
             LOGGER.warning(
                 "Could not retrieve repo list for installation %d. "
-                "Maybe we don't have access any longer.",
+                "Maybe we don't have access any longer."
+                "Nothing to delete",
                 installation_id,
             )
-            LOGGER.warning("Nothing to delete")
             return
         # Delete all data for those repos
         scrape_repo_list(
@@ -619,9 +625,9 @@ def event_installation_repositories(payload, connections, tenant_parser, repo_ca
     repos_added = payload.get("repositories_added")
     repos_removed = payload.get("repositories_removed")
 
-    project_name = payload.get("repository", {}).get("full_name")
-    print(installation_id)
-    print(project_name)
+    LOGGER.info(
+        "Handling installation_repositories event for installation %d", installation_id
+    )
 
     # TODO validate installation id from payload against installation map?
     # If they do not match, we might have missed an installation event and
@@ -660,11 +666,11 @@ def event_installation_repositories(payload, connections, tenant_parser, repo_ca
 
 def event_push(payload, connections, tenant_parser, repo_cache):
     repo_name = payload.get("repository", {}).get("full_name")
+    LOGGER.info("Handling push event for repo '%s'", repo_name)
+    # NOTE (felix): We could use the installation_id later on, to update the
+    # installation map only for this installation.
     # installation_id = payload.get('installation', {}).get('id')
     ref = payload.get("ref")
-    # old_ref = payload.get('before')
-    # new_ref = payload.get('after')
-    # commits = payload.get('commits')
 
     # TODO (felix) Get the right connection from the configuration based on what?
     # The provider? The github url? Both?
@@ -673,7 +679,8 @@ def event_push(payload, connections, tenant_parser, repo_cache):
     repo_info = gh_con.installation_map.get(repo_name)
     if not repo_info:
         # If the repo is not part of our installation map, we might have missed the create/add event.
-        # TODO (felix): Thus, we could reinit the GitHub connection (for this installation only?) to and try it again
+        # Thus, we could reinit the GitHub connection and try it again
+        # TODO (felix): re-init for this installation only?
         LOGGER.info(
             "Repo '%s' is not part of our installation map, we might have missed an event. "
             "Reinitialising installation map",
