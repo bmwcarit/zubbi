@@ -69,7 +69,7 @@ Search {%- if result is not none %} results for "{{ query }}"{%- endif %}
 
 {% block content %}
 {% if result is not none -%}
-<p><strong>{{ result.hits.total }}</strong> results for <em><strong>"{{ query }}"</strong></em></p>
+<p><strong>{{ result.hits.total.value }}</strong> results for <em><strong>"{{ query }}"</strong></em></p>
 
 {% for row in result|batch(3) %}
 <div class="row">
