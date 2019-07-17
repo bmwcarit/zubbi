@@ -168,7 +168,7 @@ class SearchView(ZubbiMethodView):
 
         current_page = filter_from // filter_size
         # The last results fit on the second last page. E.g. If we have 9/18/... results
-        last_page = max(math.ceil(result.hits.total / filter_size) - 1, 0)
+        last_page = max(math.ceil(result.hits.total.value / filter_size) - 1, 0)
         pagination = calculate_pagination(current_page, last_page)
 
         context = {
