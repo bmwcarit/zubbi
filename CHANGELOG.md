@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.0
+
+### Backwards incompatible changes
+- **Elasticsearch:** Zubbi 2.x.x is only compatible with Elasticsearch major version 7.
+
 ## 1.3.0
 
 ### New Features
