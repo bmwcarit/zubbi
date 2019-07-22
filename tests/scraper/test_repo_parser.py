@@ -121,7 +121,7 @@ def test_parse(repo_data):
         "<p><strong>Role variables</strong></p>\n"
         '<dl class="rolevar">\n'
         '<dt id="rolevar-mandatory_variable">\n'
-        '<code class="descname">mandatory_variable</code><a '
+        '<code class="sig-name descname">mandatory_variable</code><a '
         'class="headerlink" href="#rolevar-mandatory_variable" '
         'title="Permalink to this definition">¶</a><br /></dt>\n'
         "<dd><p>This variable is mandatory.</p>\n"
@@ -129,7 +129,7 @@ def test_parse(repo_data):
         "\n"
         '<dl class="rolevar">\n'
         '<dt id="rolevar-optional_variable">\n'
-        '<code class="descname">optional_variable</code><a '
+        '<code class="sig-name descname">optional_variable</code><a '
         'class="headerlink" href="#rolevar-optional_variable" '
         'title="Permalink to this definition">¶</a><br />Default: '
         '<code class="docutils literal notranslate"><span '
@@ -139,7 +139,7 @@ def test_parse(repo_data):
         "\n"
         '<dl class="rolevar">\n'
         '<dt id="rolevar-list_variable">\n'
-        '<code class="descname">list_variable</code><a '
+        '<code class="sig-name descname">list_variable</code><a '
         'class="headerlink" href="#rolevar-list_variable" '
         'title="Permalink to this definition">¶</a><br />Default: '
         '<code class="docutils literal notranslate"><span '
