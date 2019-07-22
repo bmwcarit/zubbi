@@ -438,7 +438,6 @@ def _scrape_repo_map(
         ZuulTenant.bulk_save(tenant_list)
 
         LOGGER.info("Scraping the following repositories: %s", repo_list)
-        es_repos = []
 
         for repo_name, repo_data in repo_map.items():
             # Extract the data from the repo_data
@@ -482,14 +481,13 @@ def _scrape_repo_map(
             es_repo.repo_name = repo_name
             es_repo.scrape_time = scrape_time
             es_repo.provider = provider
-            es_repos.append(es_repo)
 
             # scrape the repo if is part of the tenant config
             scrape_repo(repo, tenants, scrape_time)
 
-        # Store the information for all repos we just scraped in Elasticsearch
-        LOGGER.info("Updating %d repo definitions in Elasticsearch", len(es_repos))
-        GitRepo.bulk_save(es_repos)
+            # Store the information for the repository itself, if it was scraped successfully
+            LOGGER.info("Updating repo definition for '%s' in Elasticsearch", repo_name)
+            GitRepo.bulk_save([es_repo])
     else:
         # Delete the repositories from the repo_cache
         for repo_name in repo_list:
