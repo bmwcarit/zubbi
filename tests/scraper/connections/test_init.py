@@ -84,7 +84,7 @@ def test_init_gerrit_con_invalid_webtype(patch_es):
 
     with pytest.raises(ScraperConfigurationError) as excinfo:
         init_connections(config)
-    assert "unsupported web_type 'INVALID'" in str(excinfo)
+    assert "unsupported web_type 'INVALID'" in str(excinfo.value)
 
 
 def test_init_github_con(patch_es, mock_github_api_endpoints):
@@ -158,5 +158,5 @@ def test_init_con_invalid_provider(patch_es):
         init_connections(config)
     assert (
         "Could not init connection 'invalid_con'. Specified provider 'invalid' is not available"
-        in str(excinfo)
+        in str(excinfo.value)
     )
