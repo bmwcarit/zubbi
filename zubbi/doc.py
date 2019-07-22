@@ -65,7 +65,7 @@ def render_sphinx(content):
 
         source_dir = str(src_path.parent)
         doctree_dir = os.path.join(source_dir, ".doctrees")
-        confoverrides = {"extensions": ["zuul_sphinx"]}
+        confoverrides = {"extensions": ["zuul_sphinx"], "master_doc": "contents"}
         status_log = io.StringIO()
 
         # NOTE (fschmidt): This part needs to be in sync with the used version
