@@ -25,7 +25,7 @@ with open("README.md") as readme:
 requires = [
     "arrow",
     "click",
-    "elasticsearch-dsl",
+    "elasticsearch-dsl>=7.0.0",
     "pyyaml",
     "pyjwt",
     "pyzmq",
