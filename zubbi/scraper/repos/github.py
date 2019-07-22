@@ -57,7 +57,7 @@ class GitHubRepository(Repository):
         try:
             LOGGER.debug("Checking out '%s'", file_path)
             remote_file_content = self._repo.file_contents(file_path)
-            if remote_file_content.size is 0:
+            if remote_file_content.size == 0:
                 raise CheckoutError(file_path, "File is empty.")
             return remote_file_content.decoded.decode("utf-8")
         except github3.exceptions.NotFoundError:

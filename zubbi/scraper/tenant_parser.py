@@ -87,7 +87,7 @@ class TenantParser:
     def _load_tenant_sources_from_file(self, sources_file):
         LOGGER.info("Parsing tenant sources file '%s'", sources_file)
         with open(sources_file) as f:
-            sources = yaml.load(f)
+            sources = yaml.safe_load(f)
         return sources
 
     def _load_tenant_sources_from_repo(self, sources_repo):
@@ -113,11 +113,11 @@ class TenantParser:
                 # structure like zuul does for the main.yaml file.
                 tenant_sources = {
                     # Load the settings first, as they contain different keys
-                    "tenant": yaml.load(settings_yaml)
+                    "tenant": yaml.safe_load(settings_yaml)
                 }
                 # Update the tenant_sources with the sources file and wrap them
                 # in a 'source' key
-                tenant_sources["tenant"]["source"] = yaml.load(sources_yaml)
+                tenant_sources["tenant"]["source"] = yaml.safe_load(sources_yaml)
 
                 sources.append(tenant_sources)
             except CheckoutError as e:
