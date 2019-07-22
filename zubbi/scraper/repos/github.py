@@ -139,9 +139,10 @@ class GitHubRepository(Repository):
 
     def _get_repo_object(self):
         owner, repo_name = self.repo_name.split("/")
-        repo = self.gh_con.create_github_client(self.repo_name).repository(
-            owner=owner, repository=repo_name
-        )
+        gh_client = self.gh_con.create_github_client(self.repo_name)
+        if gh_client is None:
+            return None
+        repo = gh_client.repository(owner=owner, repository=repo_name)
         return repo
 
     def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
