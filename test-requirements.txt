@@ -23,7 +23,13 @@ pluggy==0.12.0
 pre-commit==1.17.0
 py==1.8.0
 pycodestyle==2.5.0
-pydocstyle==4.0.0
+# Due to an incompatibility from flake8-docstrings with the newest pydocstyle version,
+# we pin this to <4.0.0. Otherwise, flake8 fails with:
+# "flake8-docstrings" failed during execution due to "module 'pydocstyle' has no attribute 'tokenize_open'"
+# Once the official fix is released, we could switch it back to a newer version:
+# https://gitlab.com/pycqa/flake8-docstrings/issues/36
+# https://github.com/PyCQA/pydocstyle/issues/375
+pydocstyle<4.0.0
 pyflakes==2.1.1
 pyparsing==2.4.0
 pytest-cov==2.7.1
