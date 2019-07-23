@@ -2,6 +2,21 @@
 
 ## 2.0.0
 
+### New Features
+- **Scraper:** Update repo information in Elasticsearch directly after scraping.
+  Previously, we updated the information for all scraped repositories in one go to
+  reduce the amount of requests sent to Elasticsearch. However, this had the drawback,
+  that none of the repo information was updated if scraping any of the repositories
+  failed.
+
+### Fixes
+- **Scraper:** Fix a bug were the scraper was still trying to check out GitHub
+  repositories, although it didn't have a valid access token.
+- **Scraper:** Don't fail when trying to split the owner from an invalid GitHub
+  repository names. Actually, the wrong name comes from a bug in the tenant scraper
+  which should be fixed in a future release. But for now, it's a good idea to make
+  this part more robust.
+
 ### Backwards incompatible changes
 - **Elasticsearch:** Zubbi 2.x.x is only compatible with Elasticsearch major version 7.
 

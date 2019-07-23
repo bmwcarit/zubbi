@@ -142,10 +142,10 @@ class GitHubRepository(Repository):
             owner, repo_name = self.repo_name.split("/")
         except ValueError:
             LOGGER.error("Invalid repo name '%s'", self.repo_name)
-            return None
+            return
         gh_client = self.gh_con.create_github_client(self.repo_name)
         if gh_client is None:
-            return None
+            return
         repo = gh_client.repository(owner=owner, repository=repo_name)
         return repo
 
