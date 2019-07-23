@@ -138,10 +138,15 @@ class GitHubRepository(Repository):
         return flat_blame
 
     def _get_repo_object(self):
-        owner, repo_name = self.repo_name.split("/")
-        repo = self.gh_con.create_github_client(self.repo_name).repository(
-            owner=owner, repository=repo_name
-        )
+        try:
+            owner, repo_name = self.repo_name.split("/")
+        except ValueError:
+            LOGGER.error("Invalid repo name '%s'", self.repo_name)
+            return
+        gh_client = self.gh_con.create_github_client(self.repo_name)
+        if gh_client is None:
+            return
+        repo = gh_client.repository(owner=owner, repository=repo_name)
         return repo
 
     def url_for_file(self, file_path, highlight_start=None, highlight_end=None):
