@@ -138,7 +138,11 @@ class GitHubRepository(Repository):
         return flat_blame
 
     def _get_repo_object(self):
-        owner, repo_name = self.repo_name.split("/")
+        try:
+            owner, repo_name = self.repo_name.split("/")
+        except ValueError:
+            LOGGER.error("Invalid repo name '%s'", self.repo_name)
+            return None
         gh_client = self.gh_con.create_github_client(self.repo_name)
         if gh_client is None:
             return None
