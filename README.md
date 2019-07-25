@@ -167,8 +167,11 @@ Please note, that the key in the `CONNECTIONS` dictionary must go in hand with
 the `source` names in the tenant configuration.
 
 ```ini
-ES_HOST = 'localhost'
-ES_PORT = 9200
+ELASTICSEARCH = {
+    'host': 'localhost',
+    'port': 9200,
+}
+
 TENANT_SOURCES_FILE = 'tenant-config.yaml'
 
 CONNECTIONS = {
@@ -257,10 +260,23 @@ The Elasticsearch connection can be configured in the `settings.cfg` like
 the following:
 
 ```ini
-ES_HOST = '<elasticsearch_host>'
-ES_PORT = 9200
-ES_USER = '<user>'
-ES_PASSWORD = '<password>'
+ELASTICSEARCH = {
+    'host': '<elasticsearch_host>',
+    'port': 9200,  # default
+    'user': '<user>',
+    'password': '<password>',
+    # Optional, to avoid name clashes with existing ES indices from other applications
+    # E.g. 'zubbi' will result in indices like 'zubbi-zuul-jobs', 'zubbi-ansible-roles', ...
+    index_prefix: '<prefix>',
+    # Optional, to enable SSL for the Elasticsearch connection.
+    # You must at least set 'enabled' to True and provide other parameters if the default
+    # values are not sufficient.
+    'tls': {
+        'enabled': False,  # default
+        'check_hostname': True,  # default
+        'verify_mode': 'CERT_REQUIRED',  # default
+    },
+}
 ```
 
 ## Available Connections
