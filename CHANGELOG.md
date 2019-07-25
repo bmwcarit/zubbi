@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.1
+
+### Fixes
+- **Scraper:** Unfortunately, the scraper wasn't aware of the new Elasticsearch
+  configuration format and the SSL options.
+
 ## 2.1.0
 
 ### New Features
