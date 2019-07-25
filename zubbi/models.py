@@ -251,14 +251,18 @@ def class_from_block_type(block_type):
 
 
 def init_elasticsearch(app):
-    init_elasticsearch_con(
-        app.config["ES_HOST"],
-        app.config.get("ES_USER"),
-        app.config.get("ES_PASSWORD"),
-        app.config.get("ES_PORT"),
-        app.config.get("ES_INDEX_PREFIX"),
-        app.config.get("ES_TLS"),
-    )
+    es_config = app.config.get("ELASTICSEARCH")
+    if es_config is None:
+        es_config = {
+            "host": app.config["ES_HOST"],
+            "user": app.config.get("ES_USER"),
+            "password": app.config.get("ES_PASSWORD"),
+            "port": app.config.get("ES_PORT"),
+            "index_prefix": app.config.get("ES_INDEX_PREFIX"),
+            "tls": app.config.get("ES_TLS"),
+        }
+
+    init_elasticsearch_con(**es_config)
 
     app.add_template_test(role_type)
     app.add_template_test(job_type)
