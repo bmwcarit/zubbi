@@ -1,3 +1,4 @@
+import ssl
 from unittest import mock
 
 import elasticsearch_dsl
@@ -23,8 +24,31 @@ def elmock():
     for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
         # As the Index.name attribute holds the constant value from the original
         # definition, we can use it to reset the active value which might have
-        # changed due to the es_index_prefix hack.
+        # changed due to the index_prefix hack.
         idx_cls._index._name = idx_cls.Index.name
+
+
+def test_elasticsearch_init_ssl_defaults(elmock):
+    tls_config = {"enabled": True}
+    init_elasticsearch_con("127.0.0.1", "user", "password", 443, tls=tls_config)
+
+    # Use single assertion for each argument as we can't compare the ssl_context so easily
+    kwargs = elmock.call_args[1]
+    assert kwargs["port"] == 443
+    assert kwargs["use_ssl"] is True
+    assert kwargs["ssl_context"].check_hostname is True
+    assert kwargs["ssl_context"].verify_mode == ssl.CERT_REQUIRED
+
+
+def test_elasticsearch_init_ssl(elmock):
+    tls_config = {"enabled": True, "check_hostname": False, "verify_mode": "CERT_NONE"}
+    init_elasticsearch_con("127.0.0.1", "user", "password", 443, tls=tls_config)
+
+    kwargs = elmock.call_args[1]
+    assert kwargs["port"] == 443
+    assert kwargs["use_ssl"] is True
+    assert kwargs["ssl_context"].check_hostname is False
+    assert kwargs["ssl_context"].verify_mode == ssl.CERT_NONE
 
 
 def test_elasticsearch_init(elmock):
@@ -43,6 +67,8 @@ def test_elasticsearch_init(elmock):
         host="127.0.0.1",
         port=9200,
         http_auth=("user", "password"),
+        use_ssl=False,
+        ssl_context=None,
         serializer=serializer,
     )
 
@@ -72,7 +98,7 @@ def test_elasticsearch_init_with_prefix(elmock):
         lambda index: index in existing_indices
     )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
 
     # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
     # was called with the correct arguments.
@@ -80,6 +106,8 @@ def test_elasticsearch_init_with_prefix(elmock):
         host="127.0.0.1",
         port=9200,
         http_auth=("user", "password"),
+        use_ssl=False,
+        ssl_context=None,
         serializer=serializer,
     )
 
@@ -109,8 +137,8 @@ def test_elasticsearch_init_with_prefix_multi(elmock):
         lambda index: index in existing_indices
     )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
 
     # Evenv if we called the init() method multiple times, the index should only be
     # prepended once.
@@ -137,7 +165,7 @@ def test_elasticsearch_write(elmock):
 
 
 def test_elasticsearch_write_with_prefix(elmock):
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
 
     zt = ZuulTenant(name="foo")
     zt.save()

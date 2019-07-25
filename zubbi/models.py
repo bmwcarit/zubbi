@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
+import ssl
+
 import jinja2
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
@@ -28,6 +31,12 @@ from elasticsearch_dsl import (
 
 DEFAULT_ES_PORT = 9200
 DEFAULT_SUGGEST_SIZE = 5
+
+DEFAULT_TLS_CONFIG = {
+    "enabled": False,
+    "check_hostname": True,
+    "verify_mode": "CERT_REQUIRED",
+}
 
 
 class ZubbiDoc(Document):
@@ -242,13 +251,18 @@ def class_from_block_type(block_type):
 
 
 def init_elasticsearch(app):
-    init_elasticsearch_con(
-        app.config["ES_HOST"],
-        app.config.get("ES_USER"),
-        app.config.get("ES_PASSWORD"),
-        app.config.get("ES_PORT"),
-        app.config.get("ES_INDEX_PREFIX"),
-    )
+    es_config = app.config.get("ELASTICSEARCH")
+    if es_config is None:
+        es_config = {
+            "host": app.config["ES_HOST"],
+            "user": app.config.get("ES_USER"),
+            "password": app.config.get("ES_PASSWORD"),
+            "port": app.config.get("ES_PORT"),
+            "index_prefix": app.config.get("ES_INDEX_PREFIX"),
+            "tls": app.config.get("ES_TLS"),
+        }
+
+    init_elasticsearch_con(**es_config)
 
     app.add_template_test(role_type)
     app.add_template_test(job_type)
@@ -256,7 +270,7 @@ def init_elasticsearch(app):
 
 
 def init_elasticsearch_con(
-    host, user=None, password=None, port=None, es_index_prefix=None
+    host, user=None, password=None, port=None, index_prefix=None, tls=None
 ):
     http_auth = None
     # Set authentication parameters if available
@@ -264,7 +278,24 @@ def init_elasticsearch_con(
         http_auth = (user, password)
     if port is None:
         port = DEFAULT_ES_PORT
-    connections.create_connection(host=host, http_auth=http_auth, port=port)
+
+    # Create ssl context if enabled
+    ssl_context = None
+    tls = collections.ChainMap(tls or {}, DEFAULT_TLS_CONFIG)
+    if tls["enabled"]:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = tls["check_hostname"]
+        ssl_context.verify_mode = getattr(ssl, tls["verify_mode"])
+
+    # Somehow the SSL context is not enough, we must also pass the use_ssl=True
+    use_ssl = ssl_context is not None
+    connections.create_connection(
+        host=host,
+        http_auth=http_auth,
+        port=port,
+        use_ssl=use_ssl,
+        ssl_context=ssl_context,
+    )
 
     # NOTE (felix): Hack to override the index names with prefix from config
     # TODO (felix): Remove this once https://github.com/elastic/elasticsearch-dsl-py/pull/1099
@@ -277,16 +308,16 @@ def init_elasticsearch_con(
     # This unexpected behaviour is also described in
     # https://github.com/elastic/elasticsearch-dsl-py/issues/1121 and
     # https://github.com/elastic/elasticsearch-dsl-py/issues/1091.
-    if es_index_prefix is not None:
+    if index_prefix is not None:
         # If the user set a '-' at the end of the prefix, we don't want to end
         # up in messy index names
-        es_index_prefix = es_index_prefix.rstrip("-")
+        index_prefix = index_prefix.rstrip("-")
         for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
             # NOTE (felix): Index.name seems to hold the constant value that we defined
             # in our index-meta class for the document. _index._name on the other hand
             # holds the active value. Thus, we can use this to ensure that the prefix
             # is only prepended once, even if we call this method multiple times.
-            idx_cls._index._name = "{}-{}".format(es_index_prefix, idx_cls.Index.name)
+            idx_cls._index._name = "{}-{}".format(index_prefix, idx_cls.Index.name)
 
     ZuulJob.init()
     AnsibleRole.init()

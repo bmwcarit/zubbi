@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.1.0
+
+### New Features
+- **Elasticsearch:** Support SSL options for the Elasticsearch connection. For a
+  list of available options, take a look at the settings.cfg.example file.
+
+### Deprecated
+- **Configuration:** Changed the format on how to specify the Elasticsearch
+  connection in the config file to a single dictionary (like for CONNECTIONS).
+  The old format (prefixing everything with "ES_") is still supported but will
+  be removed in future versions. Please see the settings.cfg.example for details
+  to the new format.
+
 ## 2.0.0
 
 ### New Features
