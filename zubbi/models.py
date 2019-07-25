@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
+import ssl
+
 import jinja2
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
@@ -28,6 +31,12 @@ from elasticsearch_dsl import (
 
 DEFAULT_ES_PORT = 9200
 DEFAULT_SUGGEST_SIZE = 5
+
+DEFAULT_TLS_CONFIG = {
+    "enabled": False,
+    "check_hostname": True,
+    "verify_mode": "CERT_REQUIRED",
+}
 
 
 class ZubbiDoc(Document):
@@ -248,6 +257,7 @@ def init_elasticsearch(app):
         app.config.get("ES_PASSWORD"),
         app.config.get("ES_PORT"),
         app.config.get("ES_INDEX_PREFIX"),
+        app.config.get("ES_TLS"),
     )
 
     app.add_template_test(role_type)
@@ -256,7 +266,7 @@ def init_elasticsearch(app):
 
 
 def init_elasticsearch_con(
-    host, user=None, password=None, port=None, es_index_prefix=None
+    host, user=None, password=None, port=None, es_index_prefix=None, tls=None
 ):
     http_auth = None
     # Set authentication parameters if available
@@ -264,7 +274,24 @@ def init_elasticsearch_con(
         http_auth = (user, password)
     if port is None:
         port = DEFAULT_ES_PORT
-    connections.create_connection(host=host, http_auth=http_auth, port=port)
+
+    # Create ssl context if enabled
+    ssl_context = None
+    tls = collections.ChainMap(tls or {}, DEFAULT_TLS_CONFIG)
+    if tls["enabled"]:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = tls["check_hostname"]
+        ssl_context.verify_mode = getattr(ssl, tls["verify_mode"])
+
+    # Somehow the SSL context is not enough, we must also pass the use_ssl=True
+    use_ssl = ssl_context is not None
+    connections.create_connection(
+        host=host,
+        http_auth=http_auth,
+        port=port,
+        use_ssl=use_ssl,
+        ssl_context=ssl_context,
+    )
 
     # NOTE (felix): Hack to override the index names with prefix from config
     # TODO (felix): Remove this once https://github.com/elastic/elasticsearch-dsl-py/pull/1099

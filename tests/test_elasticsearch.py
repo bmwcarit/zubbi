@@ -1,3 +1,4 @@
+import ssl
 from unittest import mock
 
 import elasticsearch_dsl
@@ -27,6 +28,29 @@ def elmock():
         idx_cls._index._name = idx_cls.Index.name
 
 
+def test_elasticsearch_init_ssl_defaults(elmock):
+    tls_config = {"enabled": True}
+    init_elasticsearch_con("127.0.0.1", "user", "password", 443, tls=tls_config)
+
+    # Use single assertion for each argument as we can't compare the ssl_context so easily
+    kwargs = elmock.call_args[1]
+    assert kwargs["port"] == 443
+    assert kwargs["use_ssl"] is True
+    assert kwargs["ssl_context"].check_hostname is True
+    assert kwargs["ssl_context"].verify_mode == ssl.CERT_REQUIRED
+
+
+def test_elasticsearch_init_ssl(elmock):
+    tls_config = {"enabled": True, "check_hostname": False, "verify_mode": "CERT_NONE"}
+    init_elasticsearch_con("127.0.0.1", "user", "password", 443, tls=tls_config)
+
+    kwargs = elmock.call_args[1]
+    assert kwargs["port"] == 443
+    assert kwargs["use_ssl"] is True
+    assert kwargs["ssl_context"].check_hostname is False
+    assert kwargs["ssl_context"].verify_mode == ssl.CERT_NONE
+
+
 def test_elasticsearch_init(elmock):
 
     # Define the existing indices for the mock
@@ -43,6 +67,8 @@ def test_elasticsearch_init(elmock):
         host="127.0.0.1",
         port=9200,
         http_auth=("user", "password"),
+        use_ssl=False,
+        ssl_context=None,
         serializer=serializer,
     )
 
@@ -80,6 +106,8 @@ def test_elasticsearch_init_with_prefix(elmock):
         host="127.0.0.1",
         port=9200,
         http_auth=("user", "password"),
+        use_ssl=False,
+        ssl_context=None,
         serializer=serializer,
     )
 
