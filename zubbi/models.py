@@ -250,18 +250,22 @@ def class_from_block_type(block_type):
     raise ValueError("No class for block type: {}".format(block_type))
 
 
-def init_elasticsearch(app):
-    es_config = app.config.get("ELASTICSEARCH")
+def get_elasticsearch_parameters_from_config(config):
+    es_config = config.get("ELASTICSEARCH")
     if es_config is None:
         es_config = {
-            "host": app.config["ES_HOST"],
-            "user": app.config.get("ES_USER"),
-            "password": app.config.get("ES_PASSWORD"),
-            "port": app.config.get("ES_PORT"),
-            "index_prefix": app.config.get("ES_INDEX_PREFIX"),
-            "tls": app.config.get("ES_TLS"),
+            "host": config["ES_HOST"],
+            "user": config.get("ES_USER"),
+            "password": config.get("ES_PASSWORD"),
+            "port": config.get("ES_PORT"),
+            "index_prefix": config.get("ES_INDEX_PREFIX"),
+            "tls": config.get("ES_TLS"),
         }
+    return es_config
 
+
+def init_elasticsearch(app):
+    es_config = get_elasticsearch_parameters_from_config(app.config)
     init_elasticsearch_con(**es_config)
 
     app.add_template_test(role_type)

@@ -32,6 +32,7 @@ from zubbi import default_settings
 from zubbi import ZUBBI_SETTINGS_ENV
 from zubbi.models import (
     AnsibleRole,
+    get_elasticsearch_parameters_from_config,
     GitRepo,
     init_elasticsearch_con,
     ZuulJob,
@@ -278,13 +279,8 @@ def create_zmq_socket(socket_addr, timeout):
 
 def init_connections(config):
     # Initialize Elasticsearch connection
-    init_elasticsearch_con(
-        config["ES_HOST"],
-        config.get("ES_USER"),
-        config.get("ES_PASSWORD"),
-        config.get("ES_PORT"),
-        config.get("ES_INDEX_PREFIX"),
-    )
+    es_config = get_elasticsearch_parameters_from_config(config)
+    init_elasticsearch_con(**es_config)
 
     connections = {}
     for con_name, con_data in config["CONNECTIONS"].items():
