@@ -24,7 +24,7 @@ def elmock():
     for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
         # As the Index.name attribute holds the constant value from the original
         # definition, we can use it to reset the active value which might have
-        # changed due to the es_index_prefix hack.
+        # changed due to the index_prefix hack.
         idx_cls._index._name = idx_cls.Index.name
 
 
@@ -98,7 +98,7 @@ def test_elasticsearch_init_with_prefix(elmock):
         lambda index: index in existing_indices
     )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
 
     # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
     # was called with the correct arguments.
@@ -137,8 +137,8 @@ def test_elasticsearch_init_with_prefix_multi(elmock):
         lambda index: index in existing_indices
     )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
 
     # Evenv if we called the init() method multiple times, the index should only be
     # prepended once.
@@ -165,7 +165,7 @@ def test_elasticsearch_write(elmock):
 
 
 def test_elasticsearch_write_with_prefix(elmock):
-    init_elasticsearch_con("127.0.0.1", "user", "password", es_index_prefix="zubbi")
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
 
     zt = ZuulTenant(name="foo")
     zt.save()
