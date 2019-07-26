@@ -254,7 +254,6 @@ def scrape(ctx, full, repo):
                     handle_event(
                         event.decode("utf-8"),
                         json.loads(payload.decode("utf-8")),
-                        config,
                         connections,
                         tenant_parser,
                         repo_cache,
