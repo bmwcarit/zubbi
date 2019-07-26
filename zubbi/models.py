@@ -312,7 +312,7 @@ def init_elasticsearch_con(
     # This unexpected behaviour is also described in
     # https://github.com/elastic/elasticsearch-dsl-py/issues/1121 and
     # https://github.com/elastic/elasticsearch-dsl-py/issues/1091.
-    if index_prefix is not None:
+    if index_prefix:
         # If the user set a '-' at the end of the prefix, we don't want to end
         # up in messy index names
         index_prefix = index_prefix.rstrip("-")

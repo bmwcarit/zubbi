@@ -129,6 +129,34 @@ def test_elasticsearch_init_with_prefix(elmock):
     assert {"zubbi-zuul-tenants", "zubbi-git-repos"} == created_indices
 
 
+def test_elasticsearch_init_with_empty_prefix(elmock):
+
+    # Define the existing indices for the mock
+    existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
+    elmock.return_value.indices.exists.side_effect = (
+        lambda index: index in existing_indices
+    )
+
+    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="")
+
+    # Validate that all necessary indices were checked for existence
+    checked_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
+    }
+    assert {
+        "zuul-jobs",
+        "ansible-roles",
+        "zuul-tenants",
+        "git-repos",
+    } == checked_indices
+
+    # Validate that only the missing indices were created
+    created_indices = {
+        call[1]["index"] for call in elmock.return_value.indices.create.call_args_list
+    }
+    assert {"zuul-tenants", "git-repos"} == created_indices
+
+
 def test_elasticsearch_init_with_prefix_multi(elmock):
 
     # Define the existing indices for the mock
