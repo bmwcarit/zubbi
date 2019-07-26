@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.1.2
+
+### Fixes
+- **Elasticsearch:** If an index_prefix is provided, but empty, it will be ignored.
+
 ## 2.1.1
 
 ### Fixes
