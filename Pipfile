@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-zubbi = {editable = true, path = "."}
+zubbi = {editable = true,path = "."}
 
 [dev-packages]
 "flake8" = "*"
