@@ -29,6 +29,7 @@ requires = [
     "pyyaml",
     "pyjwt",
     "pyzmq",
+    "cachelib",
     "cryptography",
     "requests",
     "flask",

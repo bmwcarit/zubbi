@@ -16,8 +16,8 @@ import atexit
 from functools import wraps
 
 import zmq
+from cachelib import NullCache, SimpleCache
 from flask import current_app
-from werkzeug.contrib.cache import NullCache, SimpleCache
 
 
 def cached(key, timeout=3600):
