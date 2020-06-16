@@ -119,7 +119,7 @@ def test_parse(repo_data):
         "description_html": "<p>Role description containing some reStructuredText "
         "expressions.</p>\n"
         "<p><strong>Role variables</strong></p>\n"
-        '<dl class="rolevar">\n'
+        '<dl class="zuul rolevar">\n'
         '<dt id="rolevar-mandatory_variable">\n'
         '<code class="sig-name descname">mandatory_variable</code><a '
         'class="headerlink" href="#rolevar-mandatory_variable" '
@@ -127,7 +127,7 @@ def test_parse(repo_data):
         "<dd><p>This variable is mandatory.</p>\n"
         "</dd></dl>\n"
         "\n"
-        '<dl class="rolevar">\n'
+        '<dl class="zuul rolevar">\n'
         '<dt id="rolevar-optional_variable">\n'
         '<code class="sig-name descname">optional_variable</code><a '
         'class="headerlink" href="#rolevar-optional_variable" '
@@ -137,7 +137,7 @@ def test_parse(repo_data):
         "<dd><p>This one is not.</p>\n"
         "</dd></dl>\n"
         "\n"
-        '<dl class="rolevar">\n'
+        '<dl class="zuul rolevar">\n'
         '<dt id="rolevar-list_variable">\n'
         '<code class="sig-name descname">list_variable</code><a '
         'class="headerlink" href="#rolevar-list_variable" '

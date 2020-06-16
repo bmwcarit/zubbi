@@ -205,7 +205,7 @@ def mock_github_api_endpoints(
             json=github_response_repositories,
         )
         requests_mock.post(
-            "{}/installations/94/access_tokens".format(github_api_url),
+            "{}/app/installations/94/access_tokens".format(github_api_url),
             json=github_response_access_token,
         )
 
