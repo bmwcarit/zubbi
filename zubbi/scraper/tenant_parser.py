@@ -97,7 +97,7 @@ class TenantParser:
             tenants = sources_repo.list_directory(TENANTS_DIRECTORY)
         except CheckoutError:
             raise ScraperConfigurationError(
-                "Cannot load tenant sources. Repo '%s' does not contain a "
+                "Cannot load tenant sources. Repo '{}' does not contain a "
                 "'tenants' folder".format(sources_repo.repo_name)
             )
 

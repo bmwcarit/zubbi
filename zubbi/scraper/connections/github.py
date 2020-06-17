@@ -106,7 +106,7 @@ class GitHubConnection:
         if (not expiry) or (not token) or (now >= expiry):
             LOGGER.debug("Requesting new token for installation %s", installation_id)
             headers = self._get_app_auth_headers()
-            url = "{}/installations/{}/access_tokens".format(
+            url = "{}/app/installations/{}/access_tokens".format(
                 self.api_url, installation_id
             )
 
