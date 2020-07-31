@@ -356,6 +356,11 @@ def scrape_repo_list(
     if repo_cache is None:
         repo_cache = {}
 
+    # Keep track on repositories that are no longer part of our tenant config
+    # and thus should be deleted from Elasticsearch. Otherwise, Zubbi will loop
+    # over them each time once they become outdated (older than 24 hours).
+    invalid_repo_map = {}
+
     # Update tenant sources
     # TODO (fschmidt): This should not be necessary for each scraping. But, as we
     # don't have a mechanism yet to filter for the necessary events, we keep it
@@ -374,9 +379,32 @@ def scrape_repo_list(
             LOGGER.warning(
                 "Repo '%s' is not part of our tenant sources. Skip scraping.", repo_name
             )
-            continue
-        # TODO Simplify this with dict/list comprehension
-        filtered_repo_map[repo_name] = repo_data
+            invalid_repo_map[repo_name] = None
+        else:
+            # TODO Simplify this with dict/list comprehension
+            filtered_repo_map[repo_name] = repo_data
+
+    if invalid_repo_map:
+        LOGGER.info(
+            "The following repositories are no longer part of our tenant "
+            "sources and will be deleted: %s",
+            invalid_repo_map.keys(),
+        )
+        _scrape_repo_map(
+            # TODO (felix): It would be simpler if we could provide a list here
+            # as - in case the delete_only is set - we will only extract the
+            # keys from the map and delete all data for those repositories.
+            # Maybe we could check sometime why the split between
+            # _scrape_repo_map and _scrape_repo_list was necessary. IIRC I did
+            # that mainly to simplify the call via command line (when repos are
+            # specified as arguments).
+            invalid_repo_map,
+            tenant_list,
+            connections,
+            scrape_time,
+            repo_cache,
+            delete_only=True,
+        )
 
     if not filtered_repo_map:
         LOGGER.info("Repo list is empty, nothing to scrape.")
