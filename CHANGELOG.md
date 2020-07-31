@@ -12,6 +12,10 @@
   could either back up and restore this data via the Elasticsearch
   [reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html)
   or let Zubbi do an initial full-scrape.
+- The connections are now first initialized when a valid scraper command is
+  invoked. Thus, running `zubbi-scraper --help` or providing wrong command line
+  arguments should directly run and return without unnecessarily initializing
+  the connections to Github, Gerrit and Elasticsearch.
 
 ## 2.2.0
 
