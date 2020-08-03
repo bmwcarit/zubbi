@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.2.1
+
+### Fixes
+- Fixed a bug where the delete outdated query never matched repositories on
+  Github. To fix this behaviour, an additional repo_name.keyword field was
+  introduced in the git-repos index.
+
+  To make this change take effect, please delete the old git-repos index. Zubbi
+  will automatically recreate it on startup. To keep the existing repo data you
+  could either back up and restore this data via the Elasticsearch
+  [reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html)
+  or let Zubbi do an initial full-scrape.
+
+## 2.2.0
+
+### General
+- Updated dependencies to newest versions
+
 ## 2.1.2
 
 ### Fixes
