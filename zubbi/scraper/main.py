@@ -157,20 +157,8 @@ def main(ctx, verbosity):
             "but not both."
         )
 
-    # Initialize objects that are needed by all subcommands
-    connections = init_connections(config)
-    repo_cache = _initialize_repo_cache()
-    tenant_parser = _initialize_tenant_parser(
-        tenant_sources_repo, tenant_sources_file, connections
-    )
-
-    # Store everything in click's context object to be available for subcommands
-    ctx.obj = {
-        "config": config,
-        "connections": connections,
-        "repo_cache": repo_cache,
-        "tenant_parser": tenant_parser,
-    }
+    # Store the config in click's context object to be available for subcommands
+    ctx.obj = {"config": config}
 
     if ctx.invoked_subcommand is None:
         ctx.invoke(scrape)
@@ -180,8 +168,17 @@ def main(ctx, verbosity):
 @click.pass_context
 def list_repos(ctx):
     repos = []
-    repo_cache = ctx.obj["repo_cache"]
-    tenant_parser = ctx.obj["tenant_parser"]
+
+    config = ctx.obj["config"]
+    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
+    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
+
+    # Initialize objects that are needed by all subcommands
+    connections = init_connections(ctx.obj["config"])
+    repo_cache = _initialize_repo_cache()
+    tenant_parser = _initialize_tenant_parser(
+        tenant_sources_repo, tenant_sources_file, connections
+    )
 
     for key in tenant_parser.repo_map.keys():
         # Get the corresponding data from the repo cache, flatten the repo dict
@@ -220,9 +217,15 @@ def scrape(ctx, full, repo):
     LOGGER.info("Hello, Zubbi!")
 
     config = ctx.obj["config"]
-    connections = ctx.obj["connections"]
-    repo_cache = ctx.obj["repo_cache"]
-    tenant_parser = ctx.obj["tenant_parser"]
+    tenant_sources_repo = config.get("TENANT_SOURCES_REPO")
+    tenant_sources_file = config.get("TENANT_SOURCES_FILE")
+
+    # Initialize objects that are needed by all subcommands
+    connections = init_connections(ctx.obj["config"])
+    repo_cache = _initialize_repo_cache()
+    tenant_parser = _initialize_tenant_parser(
+        tenant_sources_repo, tenant_sources_file, connections
+    )
 
     if full:
         scrape_full(connections, tenant_parser)
