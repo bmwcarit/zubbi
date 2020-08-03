@@ -23,6 +23,7 @@ from elasticsearch_dsl import (
     Date,
     Document,
     Integer,
+    Keyword,
     Q,
     Search,
     Text,
@@ -71,7 +72,9 @@ class ZuulTenant(ZubbiDoc):
 
 
 class GitRepo(ZubbiDoc):
-    repo_name = Text()
+    # As the repo name contains a slash we must at least provide a Keyword()
+    # field to allow exact matches e.g. via term query.
+    repo_name = Text(fields={"keyword": Keyword()})
     provider = Text()
 
     class Index:
