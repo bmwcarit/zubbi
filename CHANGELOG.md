@@ -6,12 +6,6 @@
 - Fixed a bug where the delete outdated query never matched repositories on
   Github. To fix this behaviour, an additional repo_name.keyword field was
   introduced in the git-repos index.
-
-  To make this change take effect, please delete the old git-repos index. Zubbi
-  will automatically recreate it on startup. To keep the existing repo data you
-  could either back up and restore this data via the Elasticsearch
-  [reindex API](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-reindex.html)
-  or let Zubbi do an initial full-scrape.
 - The connections are now first initialized when a valid scraper command is
   invoked. Thus, running `zubbi-scraper --help` or providing wrong command line
   arguments should directly run and return without unnecessarily initializing
