@@ -45,8 +45,8 @@ requires = [
 setup(
     name="zubbi",
     description=description,
-    author="Benedikt Loeffler, Felix Schmidt, Simon Westphahl",
-    author_email="benedikt.loeffler@bmw.de, felix.fs.schmidt@bmw.de, "
+    author="Benedikt Loeffler, Felix Edel, Simon Westphahl",
+    author_email="benedikt.loeffler@bmw.de, felix.edel@bmw.de, "
     "simon.westphahl@bmw.de",
     long_description=long_description,
     long_description_content_type="text/markdown",
