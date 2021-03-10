@@ -69,7 +69,7 @@ class GitHubConnection:
         expiry = now + timedelta(minutes=5)
 
         data = {"iat": now, "exp": expiry, "iss": self.app_id}
-        app_token = jwt.encode(data, self.app_key, algorithm="RS256").decode("utf-8")
+        app_token = jwt.encode(data, self.app_key, algorithm="RS256")
 
         headers = {
             "Accept": PREVIEW_JSON_ACCEPT,
