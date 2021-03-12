@@ -121,7 +121,8 @@ def test_parse(repo_data):
         "<p><strong>Role variables</strong></p>\n"
         '<dl class="zuul rolevar">\n'
         '<dt id="rolevar-mandatory_variable">\n'
-        '<code class="sig-name descname">mandatory_variable</code><a '
+        '<code class="sig-name descname"><span '
+        'class="pre">mandatory_variable</span></code><a '
         'class="headerlink" href="#rolevar-mandatory_variable" '
         'title="Permalink to this definition">¶</a><br /></dt>\n'
         "<dd><p>This variable is mandatory.</p>\n"
@@ -129,21 +130,27 @@ def test_parse(repo_data):
         "\n"
         '<dl class="zuul rolevar">\n'
         '<dt id="rolevar-optional_variable">\n'
-        '<code class="sig-name descname">optional_variable</code><a '
+        '<code class="sig-name descname"><span '
+        'class="pre">optional_variable</span></code><a '
         'class="headerlink" href="#rolevar-optional_variable" '
-        'title="Permalink to this definition">¶</a><br />Default: '
-        '<code class="docutils literal notranslate"><span '
+        'title="Permalink to this definition">¶</a><br /><span '
+        'class="pre">Default:</span> <code class="docutils '
+        'literal notranslate"><span '
         'class="pre">some_value</span></code><br /></dt>\n'
         "<dd><p>This one is not.</p>\n"
         "</dd></dl>\n"
         "\n"
         '<dl class="zuul rolevar">\n'
         '<dt id="rolevar-list_variable">\n'
-        '<code class="sig-name descname">list_variable</code><a '
+        '<code class="sig-name descname"><span '
+        'class="pre">list_variable</span></code><a '
         'class="headerlink" href="#rolevar-list_variable" '
-        'title="Permalink to this definition">¶</a><br />Default: '
-        '<code class="docutils literal notranslate"><span '
-        'class="pre">[]</span></code><br />Type: <em>list</em><br /></dt>\n'
+        'title="Permalink to this definition">¶</a><br /><span '
+        'class="pre">Default:</span> <code class="docutils '
+        'literal notranslate"><span '
+        'class="pre">[]</span></code><br /><span '
+        'class="pre">Type:</span> <em><span '
+        'class="pre">list</span></em><br /></dt>\n'
         "<dd><p>This one must be a list.</p>\n"
         "</dd></dl>\n"
         "\n",
