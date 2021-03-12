@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.2
+
+### General
+- Updated dependencies to newest versions
+
 ## 2.2.1
 
 ### Fixes
