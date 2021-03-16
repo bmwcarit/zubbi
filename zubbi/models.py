@@ -204,7 +204,11 @@ class BlockSearch(Search):
 
         extra_filter = extra_filter or []
 
-        return self.query("bool", filter=extra_filter, must=search_query)
+        boost_reusable_query = Q("term", reusable={"value": True, "boost": 2})
+
+        return self.query(
+            "bool", filter=extra_filter, must=search_query, should=boost_reusable_query
+        )
 
     def detail_query(self, block_name, repo, extra_filter=None):
         extra_filter = extra_filter or []

@@ -1,5 +1,13 @@
 # Changelog
 
+## unreleased
+
+### New Features
+- **Scraper:** Support marking roles and jobs as "reusable". It parses the directive
+  in role's README file and job's description and store it in Elasticsearch.
+- **UI:** Search result will display roles and jobs that are marked as "reusable"
+  on top, and highlight them.
+
 ## 2.2.2
 
 ### General

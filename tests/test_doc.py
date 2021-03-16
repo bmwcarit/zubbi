@@ -81,3 +81,13 @@ def test_render_sphinx_supported_os(readme_supported_os):
 
     assert expected_platforms == result["platforms"]
     assert expected_html == result["html"]
+
+
+def test_render_sphinx_reusable(readme_reusable):
+    expected_reusable = True
+    expected_html = "<p>This is a reusable role!</p>\n"
+
+    result = render_sphinx(readme_reusable)
+
+    assert expected_reusable == result["reusable"]
+    assert expected_html == result["html"]

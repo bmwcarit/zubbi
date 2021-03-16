@@ -75,7 +75,7 @@ Search {%- if result is not none %} results for "{{ query }}"{%- endif %}
 <div class="row">
   <div class="card-columns col">
   {%- for match in row %}
-    <div class="card">
+    <div class="card{% if match.reusable %} border-primary{% endif %}">
       <div class="card-header">
         {% if match is role_type -%}
           <i class="fas fa-cubes"></i>

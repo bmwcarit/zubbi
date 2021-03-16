@@ -228,6 +228,11 @@ def readme_supported_os():
 
 
 @pytest.fixture(scope="function")
+def readme_reusable():
+    return raw_file("readmes/reusable.rst")
+
+
+@pytest.fixture(scope="function")
 def payload_webhook_installation_created():
     content = raw_file("payloads/github-webhook-installation-created.json")
     return json.loads(content)
