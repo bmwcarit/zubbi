@@ -28,26 +28,33 @@ from sphinx.util.console import nocolor
 from sphinx.util.docutils import docutils_namespace, patch_docutils
 
 
-SUPPORTED_OS_LOG_PREFIX = "supported-os"
 LOGGER = logging.getLogger(__name__)
 
 
-class SupportedOS(Directive):
+class ZubbiDirective(Directive):
     has_content = True
     required_arguments = 0
     optional_arguments = 1
     final_argument_whitespace = True
-
-    logger = sphinx_logging.getLogger("supported-os")
+    logger = sphinx_logging.getLogger("ZubbiDirective")
 
     def run(self):
+
         if len(self.arguments) > 0:
-            platforms = self.arguments[0].split(",")
-            for platform in platforms:
-                # Log the platform info in a dedicated logger for later extraction
-                self.logger.info("%s: %s", SUPPORTED_OS_LOG_PREFIX, platform)
+            values = self.arguments[0].split(",")
+            for value in values:
+                # Log the value with directive_name for later extraction
+                self.logger.info("%s: %s", self.directive_name, value)
         # We don't want to render anything, so we return an empty list of nodes
         return []
+
+
+class SupportedOS(ZubbiDirective):
+    directive_name = "supported_os"
+
+
+class Reusable(ZubbiDirective):
+    directive_name = "reusable"
 
 
 class SphinxBuildError(RuntimeError):
@@ -88,8 +95,8 @@ def render_sphinx(content):
 
             # Add the mocked SupportedOS directive to get the os information
             # without rendering it into the resulting HTML page
-            app.add_directive("supported_os", SupportedOS)
-
+            app.add_directive(SupportedOS.directive_name, SupportedOS)
+            app.add_directive(Reusable.directive_name, Reusable)
             # Start the Sphinx build
             app.build(force_all=True, filenames=[])
 
@@ -98,16 +105,18 @@ def render_sphinx(content):
 
         # Extract the platforms from the logger output
         platforms = []
+        reusable = False
         status_log.seek(0)
         for line in status_log.readlines():
-            prefix, _, platform = line.partition(":")
-            if prefix == SUPPORTED_OS_LOG_PREFIX:
-                platforms.append(platform.strip().lower())
-
+            prefix, _, value = line.partition(":")
+            if prefix == SupportedOS.directive_name:
+                platforms.append(value.strip().lower())
+            elif prefix == Reusable.directive_name:
+                reusable = value.strip().lower() in ["true", "yes"]
         with build_path.open() as build:
             html_parts = json.load(build)
 
-    return {"html": html_parts["body"], "platforms": platforms}
+    return {"html": html_parts["body"], "platforms": platforms, "reusable": reusable}
 
 
 def render_markdown(content):
