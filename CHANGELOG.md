@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 2.3.0
 
 ### New Features
 - **Scraper:** Support marking roles and jobs as "reusable". It parses the directive
