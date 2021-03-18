@@ -3,6 +3,10 @@
     parent: cool-base-job
     description: |
       This is just a job for testing purposes.
+
+      .. supported_os:: Linux
+
+      .. reusable:: True
     run: playbooks/non-existing-playbook.yaml
 
 - job:

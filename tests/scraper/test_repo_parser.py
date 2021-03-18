@@ -43,15 +43,18 @@ def test_parse(repo_data):
         "job_name": "my-cool-new-job",
         "repo": "my/project",
         "tenants": ["foo"],
-        "description": "This is just a job for testing purposes.\n",
+        "description": "This is just a job for testing purposes.\n\n"
+        ".. supported_os:: Linux\n\n"
+        ".. reusable:: True\n",
         "description_html": "<p>This is just a job for testing purposes.</p>\n",
         "parent": "cool-base-job",
         "url": "https://github/zuul.d/jobs.yaml",
         "private": False,
-        "platforms": [],
+        "platforms": ["linux"],
+        "reusable": True,
         "scrape_time": scrape_time,
         "line_start": 1,
-        "line_end": 7,
+        "line_end": 11,
         "last_updated": None,
     }
 
@@ -65,9 +68,10 @@ def test_parse(repo_data):
         "url": "https://github/zuul.d/jobs.yaml",
         "private": False,
         "platforms": [],
+        "reusable": False,
         "scrape_time": scrape_time,
-        "line_start": 8,
-        "line_end": 12,
+        "line_start": 12,
+        "line_end": 16,
         "last_updated": None,
     }
 
@@ -81,8 +85,9 @@ def test_parse(repo_data):
         "url": "https://github/zuul.d/jobs.yaml",
         "private": False,
         "platforms": [],
-        "line_start": 13,
-        "line_end": 17,
+        "reusable": False,
+        "line_start": 17,
+        "line_end": 21,
         "scrape_time": scrape_time,
         "last_updated": None,
     }
@@ -92,11 +97,13 @@ def test_parse(repo_data):
         "repo": "my/project",
         "tenants": ["foo", "bar"],
         "description": "Just some simple description\n\n"
-        ".. supported_os:: Linux, Windows\n",
+        ".. supported_os:: Linux, Windows\n\n"
+        ".. reusable:: True\n",
         "description_html": "<p>Just some simple description</p>\n",
         "url": "https://github/my/project/tree/master/roles/foo",
         "private": False,
         "platforms": ["linux", "windows"],
+        "reusable": True,
         "scrape_time": scrape_time,
         "last_updated": "2018-09-17 15:15:15",
     }
@@ -157,6 +164,7 @@ def test_parse(repo_data):
         "url": "https://github/my/project/tree/master/roles/bar",
         "private": False,
         "platforms": [],
+        "reusable": False,
         "scrape_time": scrape_time,
         "last_updated": "2018-09-17 15:15:15",
     }

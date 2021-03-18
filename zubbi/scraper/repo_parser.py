@@ -91,6 +91,7 @@ class RepoParser:
                         doc = render_sphinx(job.description)
                         job.description_html = doc["html"]
                         job.platforms = doc["platforms"]
+                        job.reusable = doc["reusable"]
                     except SphinxBuildError as exc:
                         LOGGER.warning(
                             "Description of job '%s' could not be "
