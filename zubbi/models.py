@@ -39,6 +39,13 @@ DEFAULT_TLS_CONFIG = {
     "verify_mode": "CERT_REQUIRED",
 }
 
+# We want to boost following fields
+SEARCH_BOOST_FIELDS = {
+    "role_name": "role_name^1.5",
+    "job_name": "job_name^1.5",
+    "description": "description^1.2",
+}
+
 
 class ZubbiDoc(Document):
     """All documents which are scraped by Zubbi and stored in Elasticsearch."""
@@ -193,9 +200,9 @@ class BlockSearch(Search):
             return [block_class]
         return [AnsibleRole, ZuulJob]
 
-    def search_query(self, query, fields, exact=False, extra_filter=None):
+    def search_query(self, query, fields_set, exact=False, extra_filter=None):
         # Elasticsearch cannot work with a set, only with list
-        fields = list(fields)
+        fields = [SEARCH_BOOST_FIELDS.get(field, field) for field in fields_set]
         if exact:
             search_query = Q("multi_match", query=query, fields=fields)
         else:
