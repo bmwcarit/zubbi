@@ -18,6 +18,7 @@ import ssl
 import jinja2
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
+    Boolean,
     Completion,
     connections,
     Date,
@@ -106,6 +107,7 @@ class Block(ZubbiDoc):
     description_html = Text()
     platforms = Text(multi=True, analyzer="whitespace")
     last_updated = Date(default_timezone="UTC")
+    reusable = Boolean()
 
     @staticmethod
     def suggest_field():
