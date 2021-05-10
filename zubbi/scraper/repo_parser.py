@@ -28,9 +28,12 @@ LOGGER = logging.getLogger(__name__)
 
 
 class RepoParser:
-    def __init__(self, repo, tenants, job_files, role_files, scrape_time):
+    def __init__(
+        self, repo, tenants, job_files, role_files, scrape_time, is_reusable_repo
+    ):
         self.repo = repo
         self.tenants = tenants
+        self.is_reusable_repo = is_reusable_repo
         self.job_files = job_files
         self.role_files = role_files
         self.scrape_time = scrape_time
@@ -100,6 +103,9 @@ class RepoParser:
                             exc,
                         )
 
+                # If the repo is configured as reusable, all jobs are considered reusable
+                job.reusable = self.is_reusable_repo or bool(job.reusable)
+
                 # TODO (fschmidt): Look up the tenant.default-parent and
                 # use this one over 'base' if no parent is defined.
                 # If parent is explicitly set to None, we will keep it.
@@ -144,6 +150,9 @@ class RepoParser:
                 rendered_content = render_file(changelog_file)
                 if rendered_content:
                     role.changelog_html = rendered_content.pop("html")
+
+            # If the repo is configured as reusable, all roles are considered reusable
+            role.reusable = self.is_reusable_repo or bool(role.reusable)
 
             repo_roles.append(role)
 

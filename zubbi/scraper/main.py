@@ -222,15 +222,16 @@ def scrape(ctx, full, repo):
 
     # Initialize objects that are needed by all subcommands
     connections = init_connections(ctx.obj["config"])
+    reusable_repos = ctx.obj["config"].get("REUSABLE_PROJECTS", [])
     repo_cache = _initialize_repo_cache()
     tenant_parser = _initialize_tenant_parser(
         tenant_sources_repo, tenant_sources_file, connections
     )
 
     if full:
-        scrape_full(connections, tenant_parser)
+        scrape_full(connections, reusable_repos, tenant_parser)
     elif repo:
-        scrape_full(connections, tenant_parser, repos=repo)
+        scrape_full(connections, reusable_repos, tenant_parser, repos=repo)
     else:
         # Listen to ZMQ messages
         socket_addr = config.get("ZMQ_SUB_SOCKET_ADDRESS")
@@ -240,7 +241,9 @@ def scrape(ctx, full, repo):
         while True:
             # Check if a periodic run is necessary
             LOGGER.debug("Checking for outdated repos")
-            scrape_outdated(config, connections, tenant_parser, repo_cache)
+            scrape_outdated(
+                config, connections, reusable_repos, tenant_parser, repo_cache
+            )
 
             # Listen to ZMQ messages (if configured) or wait
             if socket is None:
@@ -258,6 +261,7 @@ def scrape(ctx, full, repo):
                         event.decode("utf-8"),
                         json.loads(payload.decode("utf-8")),
                         connections,
+                        reusable_repos,
                         tenant_parser,
                         repo_cache,
                     )
@@ -304,7 +308,7 @@ def init_connections(config):
     return connections
 
 
-def scrape_outdated(config, connections, tenant_parser, repo_cache):
+def scrape_outdated(config, connections, reusable_repos, tenant_parser, repo_cache):
     scrape_interval = config["FORCE_SCRAPE_INTERVAL"]
     repo_list = []
     now = datetime.now(timezone.utc)
@@ -321,7 +325,9 @@ def scrape_outdated(config, connections, tenant_parser, repo_cache):
             scrape_interval,
             repo_list,
         )
-        scrape_repo_list(repo_list, connections, tenant_parser, repo_cache=repo_cache)
+        scrape_repo_list(
+            repo_list, connections, reusable_repos, tenant_parser, repo_cache=repo_cache
+        )
     else:
         LOGGER.info(
             "Found no repos which weren't scraped for %d hours: %s",
@@ -330,7 +336,7 @@ def scrape_outdated(config, connections, tenant_parser, repo_cache):
         )
 
 
-def scrape_full(connections, tenant_parser, repos=None):
+def scrape_full(connections, reusable_repos, tenant_parser, repos=None):
     if repos is None:
         # If we don't have any repos provided, we get all available once from the
         # tenant configuration
@@ -342,16 +348,22 @@ def scrape_full(connections, tenant_parser, repos=None):
             repo_map,
             tenant_list,
             connections,
+            reusable_repos,
             scrape_time,
             repo_cache={},
             delete_only=False,
         )
     else:
-        scrape_repo_list(repos, connections, tenant_parser)
+        scrape_repo_list(repos, connections, reusable_repos, tenant_parser)
 
 
 def scrape_repo_list(
-    repo_list, connections, tenant_parser, repo_cache=None, delete_only=False
+    repo_list,
+    connections,
+    reusable_repos,
+    tenant_parser,
+    repo_cache=None,
+    delete_only=False,
 ):
     scrape_time = datetime.now(timezone.utc)
 
@@ -404,6 +416,7 @@ def scrape_repo_list(
             invalid_repo_map,
             tenant_list,
             connections,
+            reusable_repos,
             scrape_time,
             repo_cache,
             delete_only=True,
@@ -417,6 +430,7 @@ def scrape_repo_list(
         filtered_repo_map,
         tenant_list,
         connections,
+        reusable_repos,
         scrape_time,
         repo_cache,
         delete_only,
@@ -424,7 +438,7 @@ def scrape_repo_list(
 
 
 def _scrape_repo_map(
-    repo_map, tenants, connections, scrape_time, repo_cache, delete_only
+    repo_map, tenants, connections, reusable_repos, scrape_time, repo_cache, delete_only
 ):
     # TODO It would be great if the tenant_list contains only the relevant tenants based
     # on the repository map (or whatever is the correct source). In other words:
@@ -509,7 +523,7 @@ def _scrape_repo_map(
             es_repo.provider = provider
 
             # scrape the repo if is part of the tenant config
-            scrape_repo(repo, tenants, scrape_time)
+            scrape_repo(repo, tenants, reusable_repos, scrape_time)
 
             # Store the information for the repository itself, if it was scraped successfully
             LOGGER.info("Updating repo definition for '%s' in Elasticsearch", repo_name)
@@ -536,10 +550,13 @@ def _scrape_repo_map(
     )
 
 
-def scrape_repo(repo, tenants, scrape_time):
+def scrape_repo(repo, tenants, reusable_repos, scrape_time):
     job_files, role_files = Scraper(repo).scrape()
 
-    jobs, roles = RepoParser(repo, tenants, job_files, role_files, scrape_time).parse()
+    is_rusable_repo = repo.repo_name in reusable_repos
+    jobs, roles = RepoParser(
+        repo, tenants, job_files, role_files, scrape_time, is_rusable_repo
+    ).parse()
 
     LOGGER.info("Updating %d job definitions in Elasticsearch", len(jobs))
     ZuulJob.bulk_save(jobs)
@@ -569,7 +586,9 @@ def delete_outdated(scrape_time, indices, extra_filter=None):
 # TODO (fschmidt): Maybe it's worth to move the event_* methods to a GitHubEventHandler
 # class or similar. This way, we could encapsulate different events in their respective
 # environment (e.g. GitHub, Gerrit, ...)
-def handle_event(event, payload, connections, tenant_parser, repo_cache):
+def handle_event(
+    event, payload, connections, reusable_repos, tenant_parser, repo_cache
+):
     LOGGER.info("Handling event '%s'", event)
     try:
         # TODO (fschmidt): Maybe we should change this file/module to be a class
@@ -586,14 +605,14 @@ def handle_event(event, payload, connections, tenant_parser, repo_cache):
         # TODO (fschmidt): What about 'repository' events?
         # To get updates for public/private?
         # https://developer.github.com/v3/activity/events/types/#repositoryevent
-        method(payload, connections, tenant_parser, repo_cache)
+        method(payload, connections, reusable_repos, tenant_parser, repo_cache)
     except Exception:
         # TODO (fschmidt): Does it make sense to catch an Exception here?
         # Could we catch anything more specific?
         LOGGER.exception("Error while handling event '%s'", event)
 
 
-def event_installation(payload, connections, tenant_parser, repo_cache):
+def event_installation(payload, connections, reusable_repos, tenant_parser, repo_cache):
     action = payload.get("action")
     installation_id = payload.get("installation", {}).get("id")
     repositories = payload.get("repositories", [])
@@ -609,7 +628,13 @@ def event_installation(payload, connections, tenant_parser, repo_cache):
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repositories]
         # Scrape them
-        scrape_repo_list(repo_names, connections, tenant_parser, repo_cache=repo_cache)
+        scrape_repo_list(
+            repo_names,
+            connections,
+            reusable_repos,
+            tenant_parser,
+            repo_cache=repo_cache,
+        )
 
     if action == "deleted":
         LOGGER.info("Deleting data for installation %d", installation_id)
@@ -636,6 +661,7 @@ def event_installation(payload, connections, tenant_parser, repo_cache):
         scrape_repo_list(
             repositories,
             connections,
+            reusable_repos,
             tenant_parser,
             repo_cache=repo_cache,
             delete_only=True,
@@ -644,7 +670,9 @@ def event_installation(payload, connections, tenant_parser, repo_cache):
         # TODO (fschmidt): Should we remove them also from the installatino map?
 
 
-def event_installation_repositories(payload, connections, tenant_parser, repo_cache):
+def event_installation_repositories(
+    payload, connections, reusable_repos, tenant_parser, repo_cache
+):
     installation_id = payload.get("installation", {}).get("id")
     repos_added = payload.get("repositories_added")
     repos_removed = payload.get("repositories_removed")
@@ -667,7 +695,13 @@ def event_installation_repositories(payload, connections, tenant_parser, repo_ca
         # Get list of repos from the payload
         repo_names = [r["full_name"] for r in repos_added]
         # Scrape them
-        scrape_repo_list(repo_names, connections, tenant_parser, repo_cache=repo_cache)
+        scrape_repo_list(
+            repo_names,
+            connections,
+            reusable_repos,
+            tenant_parser,
+            repo_cache=repo_cache,
+        )
 
     # Just delete the data for these repos
     if repos_removed is not None:
@@ -682,13 +716,14 @@ def event_installation_repositories(payload, connections, tenant_parser, repo_ca
         scrape_repo_list(
             repo_names,
             connections,
+            reusable_repos,
             tenant_parser,
             repo_cache=repo_cache,
             delete_only=True,
         )
 
 
-def event_push(payload, connections, tenant_parser, repo_cache):
+def event_push(payload, connections, reusable_repos, tenant_parser, repo_cache):
     repo_name = payload.get("repository", {}).get("full_name")
     LOGGER.info("Handling push event for repo '%s'", repo_name)
     # NOTE (felix): We could use the installation_id later on, to update the
@@ -738,7 +773,9 @@ def event_push(payload, connections, tenant_parser, repo_cache):
 
     LOGGER.info("Handling push event for repo %s with ref %s", repo_name, ref)
 
-    scrape_repo_list([repo_name], connections, tenant_parser, repo_cache=repo_cache)
+    scrape_repo_list(
+        [repo_name], connections, reusable_repos, tenant_parser, repo_cache=repo_cache
+    )
 
 
 if __name__ == "__main__":

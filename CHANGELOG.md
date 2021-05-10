@@ -6,6 +6,9 @@
 - **UI:** Improve search results ordering. The search results will be ordered by
   the priority of the fields matching the query. The priority is like the following:
   name -> description -> tenant/repo.
+- **Scraper** Projects(repositories) can be configured as "reusable" in settings.cfg.
+  When A repository is configured as "reusable", all jobs and roles scraped from this
+  repository are marked as "reusable".
 
 ## 2.3.0
 
