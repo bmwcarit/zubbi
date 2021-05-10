@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 2.4.0
 
 ### New Features
 - **UI:** Improve search results ordering. The search results will be ordered by
