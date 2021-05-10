@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-### New Features
+### 2.4.0
 - **UI:** Improve search results ordering. The search results will be ordered by
   the priority of the fields matching the query. The priority is like the following:
   name -> description -> tenant/repo.
