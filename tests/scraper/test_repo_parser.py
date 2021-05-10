@@ -29,13 +29,16 @@ def test_parse(repo_data):
     # Extract test data from fixture function result
     repo, tenants, job_files, role_files = repo_data
 
-    jobs, roles = RepoParser(repo, tenants, job_files, role_files, scrape_time).parse()
+    jobs, roles = RepoParser(
+        repo, tenants, job_files, role_files, scrape_time, is_reusable_repo=False
+    ).parse()
 
     # We assume that we can access the resulting jobs and roles dictionary
     # with the given SHA values. Otherwise, we will get a KeyError.
     job_1 = jobs[0]
     job_2 = jobs[1]
     job_3 = jobs[2]
+    job_4 = jobs[3]
     role_1 = [r for r in roles if r["role_name"] == "foo"][0]
     role_2 = [r for r in roles if r["role_name"] == "bar"][0]
 
@@ -87,7 +90,21 @@ def test_parse(repo_data):
         "platforms": [],
         "reusable": False,
         "line_start": 17,
-        "line_end": 21,
+        "line_end": 22,
+        "scrape_time": scrape_time,
+        "last_updated": None,
+    }
+
+    expected_job_4 = {
+        "job_name": "no-description-job",
+        "repo": "my/project",
+        "tenants": ["foo"],
+        "parent": None,
+        "url": "https://github/zuul.d/jobs.yaml",
+        "private": False,
+        "reusable": False,
+        "line_start": 23,
+        "line_end": 25,
         "scrape_time": scrape_time,
         "last_updated": None,
     }
@@ -174,5 +191,33 @@ def test_parse(repo_data):
     assert job_1.to_dict(skip_empty=False) == expected_job_1
     assert job_2.to_dict(skip_empty=False) == expected_job_2
     assert job_3.to_dict(skip_empty=False) == expected_job_3
+    assert job_4.to_dict(skip_empty=False) == expected_job_4
     assert role_1.to_dict(skip_empty=False) == expected_role_1
     assert role_2.to_dict(skip_empty=False) == expected_role_2
+
+
+def test_parse_reusable_repo(repo_data):
+    scrape_time = datetime.now(timezone.utc)
+    # Extract test data from fixture function result
+    repo, tenants, job_files, role_files = repo_data
+
+    jobs, roles = RepoParser(
+        repo, tenants, job_files, role_files, scrape_time, is_reusable_repo=True
+    ).parse()
+
+    # We assume that we can access the resulting jobs and roles dictionary
+    # with the given SHA values. Otherwise, we will get a KeyError.
+    job_1 = jobs[0]
+    job_2 = jobs[1]
+    job_3 = jobs[2]
+    job_4 = jobs[3]
+    role_1 = [r for r in roles if r["role_name"] == "foo"][0]
+    role_2 = [r for r in roles if r["role_name"] == "bar"][0]
+
+    # Repo parsed as reusable = True, all jobs and roles should have reusable==True
+    assert job_1.to_dict(skip_empty=False)["reusable"]
+    assert job_2.to_dict(skip_empty=False)["reusable"]
+    assert job_3.to_dict(skip_empty=False)["reusable"]
+    assert job_4.to_dict(skip_empty=False)["reusable"]
+    assert role_1.to_dict(skip_empty=False)["reusable"]
+    assert role_2.to_dict(skip_empty=False)["reusable"]

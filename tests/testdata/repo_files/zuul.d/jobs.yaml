@@ -19,3 +19,7 @@
     description: |
       This is a base job with explicitly no parent.
     parent: null
+
+- job:
+    name: no-description-job
+    parent: null

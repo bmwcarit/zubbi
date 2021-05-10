@@ -36,7 +36,12 @@ def patched_connections():
 def test_unknown_event(patched_connections):
     # An unknown event shouldn't do anything, neither throw an exception
     handle_event(
-        "unknown", None, patched_connections, tenant_parser=None, repo_cache=None
+        "unknown",
+        None,
+        patched_connections,
+        reusable_repos=[],
+        tenant_parser=None,
+        repo_cache=None,
     )
 
 
@@ -50,6 +55,7 @@ def test_event_installation_created(
     event_installation(
         payload_webhook_installation_created,
         patched_connections,
+        reusable_repos=[],
         tenant_parser=None,
         repo_cache=None,
     )
@@ -64,6 +70,7 @@ def test_event_installation_created(
             "playground/testsub3",
         ],
         patched_connections,
+        [],
         None,
         repo_cache=None,
     )
@@ -83,6 +90,7 @@ def test_event_installation_deleted(
         event_installation(
             payload_webhook_installation_deleted,
             patched_connections,
+            reusable_repos=[],
             tenant_parser=None,
             repo_cache=None,
         )
@@ -92,6 +100,7 @@ def test_event_installation_deleted(
     assert scrape_mock.call_args == mock.call(
         ["org/foo", "org/bar"],
         patched_connections,
+        [],
         None,
         repo_cache=None,
         delete_only=True,
@@ -105,11 +114,17 @@ def test_event_push(scrape_mock, patched_connections, payload_webhook_push):
     gh_con = patched_connections.get("github")
     gh_con.installation_map = {"zubbi-oss/testsub1": {"default_branch": "master"}}
 
-    event_push(payload_webhook_push, patched_connections, None, repo_cache=None)
+    event_push(
+        payload_webhook_push,
+        patched_connections,
+        reusable_repos=[],
+        tenant_parser=None,
+        repo_cache=None,
+    )
 
     # Ensure that the scrape method is called with the correct list of repositories
     assert scrape_mock.call_args == mock.call(
-        ["zubbi-oss/testsub1"], patched_connections, None, repo_cache=None
+        ["zubbi-oss/testsub1"], patched_connections, [], None, repo_cache=None
     )
 
 
@@ -117,7 +132,13 @@ def test_event_push(scrape_mock, patched_connections, payload_webhook_push):
 def test_event_push_missing_repo(
     scrape_reprime, patched_connections, payload_webhook_push
 ):
-    event_push(payload_webhook_push, patched_connections, None, repo_cache=None)
+    event_push(
+        payload_webhook_push,
+        patched_connections,
+        reusable_repos=[],
+        tenant_parser=None,
+        repo_cache=None,
+    )
 
     # As we did not add the required repository to our GitHub connection, it should
     # try to re-init the installation map.
@@ -133,7 +154,13 @@ def test_event_push_invalid_branch(
     gh_con = patched_connections.get("github")
     gh_con.installation_map = {"zubbi-oss/testsub1": {"default_branch": "not-master"}}
 
-    event_push(payload_webhook_push, patched_connections, None, repo_cache=None)
+    event_push(
+        payload_webhook_push,
+        patched_connections,
+        reusable_repos=[],
+        tenant_parser=None,
+        repo_cache=None,
+    )
 
     # As the branch from the payload is different from the default branch we defined above,
     # the event shouldn't be handled, and thus the scrape method shouldn't have been called.
