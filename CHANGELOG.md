@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.1
+
+### Fixes
+- How-to page is updated with description of supported_os and reusable directives.
+
 ## 2.4.0
 
 ### New Features

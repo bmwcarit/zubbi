@@ -3,6 +3,7 @@
 The following documentation contains examples for different variable types
 and how they can be documented properly using the zuul specific Sphinx
 directives.
+It also contains zubbi specific directives: <b>supported_os</b> and <b>reusable</b>.
 
 <span class="gs">**Role variables**</span>
 
@@ -51,5 +52,15 @@ directives.
 
    This variable must be a dictionary. As it does not provide any default
    value and thus, must be set to use this role.
+
+<span class="p">..</span> <span class="ow">supported_os</span><span class="p">::</span> Linux, Windows
+
+   List of supported operating systems, separated by comma. Currently supported
+   values are <b>Linux</b> and <b>Windows</b>.
+
+<span class="p">..</span> <span class="ow">reusable</span><span class="p">::</span> True
+
+   Set this to <b>True</b> if the role should be highlighted as reusable in Zubbi.
+
 </pre></div>
 </div>
