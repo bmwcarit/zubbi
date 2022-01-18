@@ -129,55 +129,61 @@ def test_parse(repo_data):
         "role_name": "bar",
         "repo": "my/project",
         "tenants": ["foo", "bar"],
-        "description": "Role description containing some reStructuredText expressions.\n\n"
-        "**Role variables**\n\n"
-        ".. zuul:rolevar:: mandatory_variable\n\n"
-        "   This variable is mandatory.\n\n\n"
-        ".. zuul:rolevar:: optional_variable\n"
-        "   :default: some_value\n\n"
-        "   This one is not.\n\n\n"
-        ".. zuul:rolevar:: list_variable\n"
-        "   :default: []\n"
-        "   :type: list\n\n"
-        "   This one must be a list.\n",
-        "description_html": "<p>Role description containing some reStructuredText "
-        "expressions.</p>\n"
-        "<p><strong>Role variables</strong></p>\n"
-        '<dl class="zuul rolevar">\n'
-        '<dt id="rolevar-mandatory_variable">\n'
-        '<code class="sig-name descname"><span '
-        'class="pre">mandatory_variable</span></code><a '
-        'class="headerlink" href="#rolevar-mandatory_variable" '
-        'title="Permalink to this definition">¶</a><br /></dt>\n'
-        "<dd><p>This variable is mandatory.</p>\n"
-        "</dd></dl>\n"
-        "\n"
-        '<dl class="zuul rolevar">\n'
-        '<dt id="rolevar-optional_variable">\n'
-        '<code class="sig-name descname"><span '
-        'class="pre">optional_variable</span></code><a '
-        'class="headerlink" href="#rolevar-optional_variable" '
-        'title="Permalink to this definition">¶</a><br /><span '
-        'class="pre">Default:</span> <code class="docutils '
-        'literal notranslate"><span '
-        'class="pre">some_value</span></code><br /></dt>\n'
-        "<dd><p>This one is not.</p>\n"
-        "</dd></dl>\n"
-        "\n"
-        '<dl class="zuul rolevar">\n'
-        '<dt id="rolevar-list_variable">\n'
-        '<code class="sig-name descname"><span '
-        'class="pre">list_variable</span></code><a '
-        'class="headerlink" href="#rolevar-list_variable" '
-        'title="Permalink to this definition">¶</a><br /><span '
-        'class="pre">Default:</span> <code class="docutils '
-        'literal notranslate"><span '
-        'class="pre">[]</span></code><br /><span '
-        'class="pre">Type:</span> <em><span '
-        'class="pre">list</span></em><br /></dt>\n'
-        "<dd><p>This one must be a list.</p>\n"
-        "</dd></dl>\n"
-        "\n",
+        "description": (
+            "Role description containing some reStructuredText expressions.\n\n"
+            "**Role variables**\n\n"
+            ".. zuul:rolevar:: mandatory_variable\n\n"
+            "   This variable is mandatory.\n\n\n"
+            ".. zuul:rolevar:: optional_variable\n"
+            "   :default: some_value\n\n"
+            "   This one is not.\n\n\n"
+            ".. zuul:rolevar:: list_variable\n"
+            "   :default: []\n"
+            "   :type: list\n\n"
+            "   This one must be a list.\n"
+        ),
+        "description_html": (
+            "<p>Role description containing some reStructuredText expressions.</p>\n"
+            "<p><strong>Role variables</strong></p>\n"
+            '<dl class="zuul rolevar">\n'
+            '<dt class="sig sig-object zuul" id="rolevar-mandatory_variable">\n'
+            '<span class="sig-name descname">'
+            '<span class="pre">mandatory_variable</span>'
+            "</span>"
+            '<a class="headerlink" href="#rolevar-mandatory_variable" '
+            'title="Permalink to this definition">'
+            "¶</a><br /></dt>\n"
+            "<dd><p>This variable is mandatory.</p>\n"
+            "</dd></dl>\n"
+            "\n"
+            '<dl class="zuul rolevar">\n'
+            '<dt class="sig sig-object zuul" id="rolevar-optional_variable">\n'
+            '<span class="sig-name descname">'
+            '<span class="pre">optional_variable</span>'
+            "</span>"
+            '<a class="headerlink" href="#rolevar-optional_variable" '
+            'title="Permalink to this definition">'
+            '¶</a><br /><span class="pre">Default:</span> '
+            '<code class="docutils literal notranslate"><span class="pre">'
+            "some_value</span></code><br /></dt>\n"
+            "<dd><p>This one is not.</p>\n"
+            "</dd></dl>\n"
+            "\n"
+            '<dl class="zuul rolevar">\n'
+            '<dt class="sig sig-object zuul" id="rolevar-list_variable">\n'
+            '<span class="sig-name descname">'
+            '<span class="pre">list_variable</span>'
+            "</span>"
+            '<a class="headerlink" href="#rolevar-list_variable" '
+            'title="Permalink to this definition">¶</a><br />'
+            '<span class="pre">Default:</span> '
+            '<code class="docutils literal notranslate"><span class="pre">[]</span>'
+            '</code><br /><span class="pre">Type:</span> <em><span class="pre">'
+            "list</span></em><br /></dt>\n"
+            "<dd><p>This one must be a list.</p>\n"
+            "</dd></dl>\n"
+            "\n"
+        ),
         "url": "https://github/my/project/tree/master/roles/bar",
         "private": False,
         "platforms": [],
