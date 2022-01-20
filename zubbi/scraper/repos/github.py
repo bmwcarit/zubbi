@@ -25,24 +25,26 @@ from zubbi.utils import urljoin
 LOGGER = logging.getLogger(__name__)
 
 GRAPHQL_BLAME_QUERY = """
-query($owner:String!, $repo:String!, $path:String!) {
-    repository(owner: $owner, name: $repo) {
-    object(expression: "master") {
+query ($owner: String!, $repo: String!, $path: String!) {
+  repository(owner: $owner, name: $repo) {
+    defaultBranchRef {
+      target {
         ... on Commit {
-        blame(path: $path){
+          blame(path: $path) {
             ranges {
-            startingLine
-            endingLine
-            commit {
+              startingLine
+              endingLine
+              commit {
                 committer {
-                date
+                  date
                 }
+              }
             }
-            }
+          }
         }
-        }
+      }
     }
-    }
+  }
 }
 """
 
@@ -127,14 +129,19 @@ class GitHubRepository(Repository):
 
         # Flatten the result
         flat_blame = []
-        for blame in blame_json["data"]["repository"]["object"]["blame"]["ranges"]:
-            flat_blame.append(
-                {
-                    "start": blame["startingLine"],
-                    "end": blame["endingLine"],
-                    "date": blame["commit"]["committer"]["date"],
-                }
-            )
+        try:
+            for blame in blame_json["data"]["repository"]["defaultBranchRef"]["target"][
+                "blame"
+            ]["ranges"]:
+                flat_blame.append(
+                    {
+                        "start": blame["startingLine"],
+                        "end": blame["endingLine"],
+                        "date": blame["commit"]["committer"]["date"],
+                    }
+                )
+        except KeyError:
+            LOGGER.exception("Unable to retrieve blame info for file %s", path)
         return flat_blame
 
     def _get_repo_object(self):
