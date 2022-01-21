@@ -38,10 +38,10 @@ class DummyRepo(Repository):
     def __init__(self, name):
         self._name = name
 
-    def check_out_file(self, file_path):
+    def file_contents(self, file_path):
         pass
 
-    def list_directory(self, directory_path):
+    def directory_contents(self, directory_path):
         pass
 
     def last_changed(self, path):

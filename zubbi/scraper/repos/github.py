@@ -55,25 +55,23 @@ class GitHubRepository(Repository):
         self.gh_con = gh_con
         self._repo = self._get_repo_object()
 
-    def check_out_file(self, file_path):
+    def file_contents(self, file_path):
         try:
-            LOGGER.debug("Checking out '%s'", file_path)
+            LOGGER.debug("Getting file content for '%s'", file_path)
             remote_file_content = self._repo.file_contents(file_path)
             if remote_file_content.size == 0:
                 raise CheckoutError(file_path, "File is empty.")
             return remote_file_content.decoded.decode("utf-8")
         except github3.exceptions.NotFoundError:
             raise CheckoutError(file_path, "File not found.")
+        except github3.exceptions.UnprocessableResponseBody:
+            # This can happen if we try to access a path as file via the
+            # GitHub API.
+            raise CheckoutError(file_path, "Path is not a file.")
 
-    def list_directory(self, directory_path):
+    def directory_contents(self, directory_path):
         try:
             LOGGER.debug("Listing contents of '%s' directory", directory_path)
-            # We are only interested in the filenames as the content is None
-            # anyways. If necessary, we could add the filetype (file, directory,
-            # symlink, ...) to the result (value.type) and use this function
-            # in a recursive way. However, this makes only sense if we don't know
-            # the file structures for jobs and roles which is not the case
-            # for this use case.
             remote_directory = self._repo.directory_contents(
                 directory_path, return_as=dict
             )

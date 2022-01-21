@@ -27,6 +27,8 @@ README_FILES = ["README.rst", "README.md", "README.txt", "README"]
 
 CHANGELOG_FILES = ["CHANGELOG.rst", "CHANGELOG.md", "CHANGELOG.txt", "CHANGELOG"]
 
+ROLES_DIRECTORY = "roles"
+
 REPO_ROOT = "/"
 
 
@@ -35,63 +37,93 @@ class Scraper:
         self.repo = repo
 
     def scrape(self):
-        LOGGER.info("Scraping '%s'", self.repo.repo_name)
+        LOGGER.info("Scraping '%s'", self.repo.name)
 
-        job_files = self.check_out_job_files()
-        role_files = self.check_out_role_files()
+        # TODO (felix): Currently we are scraping all files of a single
+        # repository before we start parsing them. This might load a lot
+        # of files into memory. Could we change the workflow and fetch +
+        # parse each file directly. I'm not sure if we do some
+        # cross-references between files. I have to check this. At least
+        # for roles this shouldn't be a problem, as a single role
+        # directory is self-contained.
+        job_files = self.scrape_job_files()
+        role_files = self.scrape_role_files()
 
         return job_files, role_files
 
-    def check_out_job_files(self):
-        job_files = {}
+    def scrape_job_files(self):
 
-        root_files = self.repo.list_directory(REPO_ROOT)
-
-        # Search zuul directories
-        for directory in ZUUL_DIRECTORIES:
-            # Skip non-existing zuul dirs
-            if directory not in root_files.keys():
-                continue
-            try:
-                remote_files = self.repo.list_directory(directory)
-                for filename, file_content in remote_files.items():
-                    rel_path = file_content.path
-                    try:
-                        job_files[rel_path] = {
-                            "last_changed": self.repo.last_changed(rel_path),
-                            "blame": self.repo.blame(rel_path),
-                            "content": self.repo.check_out_file(rel_path),
-                        }
-                    except CheckoutError as e:
-                        LOGGER.exception(e)
-            except CheckoutError as e:
-                LOGGER.debug(e)
-
-        # Search zuul files
-        for zuul_file in ZUUL_FILES:
-            # Skip non-existing zuul files
-            if zuul_file not in root_files.keys():
-                continue
-            try:
-                job_files[zuul_file] = {
-                    "last_changed": self.repo.last_changed(zuul_file),
-                    "blame": self.repo.blame(zuul_file),
-                    "content": self.repo.check_out_file(zuul_file),
-                }
-            except CheckoutError as e:
-                LOGGER.debug(e)
-
+        job_files = self.iterate_directory(
+            REPO_ROOT, whitelist=ZUUL_DIRECTORIES + ZUUL_FILES
+        )
         return job_files
 
-    def check_out_role_files(self):
-        role_files = {}
-        # Try to access the 'roles' directory
-        try:
-            roles = self.repo.list_directory("roles")
-            for role_name, role_content in roles.items():
+    def iterate_directory(self, path, file_infos=None, whitelist=None):
+        if file_infos is None:
+            file_infos = {}
+
+        remote_files = self.repo.directory_contents(path)
+
+        for file_name, remote_file in remote_files.items():
+            # Skip files/directories that do not match the whitelist.
+            # NOTE (felix): The whitelist is not forwarded and only
+            # evaluated on top level.
+            if whitelist and file_name not in whitelist:
+                continue
+
+            if remote_file.type == "dir":
                 try:
-                    last_changed = self.repo.last_changed(role_content.path)
-                    existing_files = self.repo.list_directory(role_content.path)
+                    self.iterate_directory(remote_file.path, file_infos)
+                except CheckoutError as e:
+                    LOGGER.exception(
+                        "Unable to get check out directory '%s': %s",
+                        remote_file.path,
+                        e,
+                    )
+            elif remote_file.type == "file":
+                file_info = self.get_file_info(remote_file.path)
+                if file_info:
+                    file_infos[remote_file.path] = file_info
+            else:
+                # There are other file types like symlink or submodule,
+                # but we ignore them for now.
+                LOGGER.debug(
+                    "Ignoring file type '%s' in path '%s'",
+                    remote_file.type,
+                    remote_file.path,
+                )
+        return file_infos
+
+    def get_file_info(self, path):
+        file_info = {}
+        try:
+            file_info = {
+                "last_changed": self.repo.last_changed(path),
+                "blame": self.repo.blame(path),
+                "content": self.repo.file_contents(path),
+            }
+        except CheckoutError as e:
+            LOGGER.debug("Unable to get file info for '%s': %s", path, e)
+
+        return file_info
+
+    def scrape_role_files(self):
+        role_files = {}
+        # We are only interested in the role name (=> directory name)
+        # and the README and CHANGELOG files. Thus, we don't need to
+        # iterate recursively over the roles directory as those files
+        # should be on the top-level per role.
+        try:
+            roles = self.repo.directory_contents(ROLES_DIRECTORY)
+            for role_name, remote_file in roles.items():
+                try:
+                    if remote_file.type != "dir":
+                        # Ansible requires the role to be defined in a
+                        # certain directory structure. Thus, we can
+                        # ignore it in case it's not a directory.
+                        continue
+                    last_changed = self.repo.last_changed(remote_file.path)
+                    existing_files = self.repo.directory_contents(remote_file.path)
                     # Skip empty directories or files
                     if not existing_files:
                         continue
@@ -120,7 +152,7 @@ class Scraper:
                 # Return the first matching file
                 match = {
                     "path": rel_path,
-                    "content": self.repo.check_out_file(rel_path),
+                    "content": self.repo.file_contents(rel_path),
                 }
                 return match
             except CheckoutError as e:
