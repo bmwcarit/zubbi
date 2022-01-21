@@ -94,7 +94,7 @@ class TenantParser:
         LOGGER.info("Collecting tenant sources from repo '%s'", sources_repo)
         sources = []
         try:
-            tenants = sources_repo.list_directory(TENANTS_DIRECTORY)
+            tenants = sources_repo.directory_contents(TENANTS_DIRECTORY)
         except CheckoutError:
             raise ScraperConfigurationError(
                 "Cannot load tenant sources. Repo '{}' does not contain a "
@@ -103,10 +103,10 @@ class TenantParser:
 
         for tenant in tenants.keys():
             try:
-                sources_yaml = sources_repo.check_out_file(
+                sources_yaml = sources_repo.file_contents(
                     os.path.join("tenants", tenant, "sources.yaml")
                 )
-                settings_yaml = sources_repo.check_out_file(
+                settings_yaml = sources_repo.file_contents(
                     os.path.join("tenants", tenant, "settings.yaml")
                 )
                 # NOTE (fschmidt): We parse both files and create the same data

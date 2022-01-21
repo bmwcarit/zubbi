@@ -17,11 +17,11 @@ import abc
 
 class Repository(abc.ABC):
     @abc.abstractmethod
-    def check_out_file(self, file_path):
+    def file_contents(self, file_path):
         """Check out a single file of this repo."""
 
     @abc.abstractmethod
-    def list_directory(self, directory_path):
+    def directory_contents(self, directory_path):
         """List the content of a single directory of this repo."""
 
     @abc.abstractmethod

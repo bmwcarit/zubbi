@@ -53,7 +53,7 @@ def test_get_repo_object_failure(tmpdir):
     assert git_repo._repo is None
 
 
-def test_check_out_file(mock_git_repo, tmpdir):
+def test_file_contents(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -61,11 +61,11 @@ def test_check_out_file(mock_git_repo, tmpdir):
         git_con = GitConnection(git_url, workspace=tmpdir)
         git_repo = GitRepository(repo_name, git_con)
 
-        contents = git_repo.check_out_file("README")
+        contents = git_repo.file_contents("README")
         assert contents == "Repository: foo"
 
 
-def test_check_out_non_existing_file(mock_git_repo, tmpdir):
+def test_non_existing_file_contents(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -74,11 +74,11 @@ def test_check_out_non_existing_file(mock_git_repo, tmpdir):
         git_repo = GitRepository(repo_name, git_con)
 
         with pytest.raises(CheckoutError) as excinfo:
-            git_repo.check_out_file("non-existing-file")
+            git_repo.file_contents("non-existing-file")
         assert "Failed to check out 'non-existing-file'" in str(excinfo.value)
 
 
-def test_list_directory(mock_git_repo, tmpdir):
+def test_directory_contents(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -86,14 +86,14 @@ def test_list_directory(mock_git_repo, tmpdir):
         git_con = GitConnection(git_url, workspace=tmpdir)
         git_repo = GitRepository(repo_name, git_con)
 
-        contents = git_repo.list_directory("/")
+        contents = git_repo.directory_contents("/")
         # The contents dict should contain an entry for the README file
         readme_contents = contents["README"]
         assert isinstance(readme_contents, FileContent)
         assert readme_contents.path == "README"
 
 
-def test_list_non_existing_directory(mock_git_repo, tmpdir):
+def test_non_existing_directory_contents(mock_git_repo, tmpdir):
     git_url = "https://localhost/git"
     repo_name = "foo"
 
@@ -102,5 +102,5 @@ def test_list_non_existing_directory(mock_git_repo, tmpdir):
         git_repo = GitRepository(repo_name, git_con)
 
         with pytest.raises(CheckoutError) as excinfo:
-            git_repo.list_directory("/non-existing-directory")
+            git_repo.directory_contents("/non-existing-directory")
         assert "Failed to check out '/non-existing-directory/'" in str(excinfo.value)
