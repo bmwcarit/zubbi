@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.4.3
+
+### Fixes
+- Fixed a bug that made the zubbi-scraper crash when a zuul config directory
+  contained not only files but a nested directory structure. Those config
+  directories are now scraped recursively.
+- Fixed a bug that made zubbi-scraper crash on startup if the TENANT_SOURCES_REPO
+  setting referenced an unknown connection.
+
+## 2.4.2
+
+### Fixes
+- Fixed a GraphQL query which was relying on a master branch being present in
+  the repository.
+
 ## 2.4.1
 
 ### Fixes
