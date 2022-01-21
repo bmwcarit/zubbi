@@ -86,12 +86,17 @@ def _initialize_tenant_parser(tenant_sources_repo, tenant_sources_file, connecti
         # Config entry must be in format <connection_name>:<repo>
         con_name, repo_name = tenant_sources_repo.split(":", 1)
         con = connections.get(con_name)
+        if not con:
+            raise ScraperConfigurationError(
+                f"Cannot load tenant sources from repo '{repo_name}'. "
+                f"Specified connection '{con_name}' is not avilable."
+            )
         provider = con.provider
         repo_class = REPOS.get(provider)
-        if not con or not repo_class:
+        if not repo_class:
             raise ScraperConfigurationError(
-                "Cannot load tenant sources from repo '{}'. Specified connection '{}' "
-                "is not available".format(repo_name, con_name)
+                f"Cannot load tenant sources from repo '{repo_name}'. "
+                f"Unknown connection provider '{provider}'."
             )
 
         repo = repo_class(repo_name, con)
