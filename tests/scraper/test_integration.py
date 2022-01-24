@@ -70,6 +70,7 @@ class MockGitHubRepository(GitHubRepository):
                 )
             },
             "roles/docker-run/README.rst": MOCKED_ROLE_DESCRIPTION,
+            "roles/ignored": MockContents("not a valid role", MockContents.FILE),
         },
         "orga1/repo2": {
             "roles": {
@@ -104,7 +105,7 @@ class MockGitHubRepository(GitHubRepository):
         self.gh = mock.Mock()
         self._repo = repo_name
 
-    def list_directory(self, directory_path):
+    def directory_contents(self, directory_path):
         # Just list different files based on the given repo (which is the project
         # name in this case) and the directory_path
         try:
@@ -118,7 +119,7 @@ class MockGitHubRepository(GitHubRepository):
                 return {}
             raise CheckoutError("Directory {} does not exist in repo", directory_path)
 
-    def check_out_file(self, file_path):
+    def file_contents(self, file_path):
         # Just return different file contents based on the combination of
         # repo and file_path
         try:

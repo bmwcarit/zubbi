@@ -69,7 +69,7 @@ class GitRepository(Repository):
 
         return repo
 
-    def check_out_file(self, file_path):
+    def file_contents(self, file_path):
         try:
             LOGGER.debug("Checking out '%s'", file_path)
             content = self._repo.git.show("{}:{}".format(DEFAULT_BRANCH, file_path))
@@ -77,7 +77,7 @@ class GitRepository(Repository):
         except GitCommandError as e:
             raise CheckoutError(file_path, e.stderr)
 
-    def list_directory(self, directory_path):
+    def directory_contents(self, directory_path):
         LOGGER.debug("Listing contents of '%s' directory", directory_path)
         command = ["git", "ls-tree", "--name-only", DEFAULT_BRANCH]
         # git ls-tree uses the root of the repository automatically, if no path is provided
