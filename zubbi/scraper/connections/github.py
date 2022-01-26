@@ -29,7 +29,6 @@ LOGGER = logging.getLogger(__name__)
 
 class GitHubConnection:
     def __init__(self, url, app_id, app_key):
-
         self.base_url = url
         self.api_url = urljoin(url, "api/v3")
         self.graphql_url = urljoin(url, "api/graphql")
@@ -42,10 +41,9 @@ class GitHubConnection:
 
     def init(self):
         LOGGER.info("Initializing GitHub connection to %s", self.base_url)
-        self._authenticate()
-        self._prime_install_map()
+        self.authenticate()
 
-    def _authenticate(self):
+    def authenticate(self):
         LOGGER.debug("Authenticating against GitHub")
         try:
             with open(self._app_key, "r") as f:
@@ -78,24 +76,36 @@ class GitHubConnection:
 
         return headers
 
-    def _get_installation_key(
-        self, project, user_id=None, install_id=None, reprime=False
-    ):
+    def _get_installation_key(self, project):
         """Get the auth token for a project or installation id."""
-        installation_id = install_id
-        if project is not None:
-            installation_id = self.installation_map.get(project, {}).get(
-                "installation_id"
-            )
+
+        # TODO (felix): Look up the installation for the given project.
+        # After that check the installation_token_cache for a token for
+        # this installation. If none could be found (or the token is
+        # expired), request a new one and store it in the cache.
+        # TODO (felix): We should change the installation map to
+        # org -> installation_id
+        # so we don't have to ask the github API for each installation.
+        # TODO (felix): What if the installation changed (e.g. the app
+        # was reinstalled in a repo/org)?
+        # -> This should be handled by the webhook event handlers. But
+        # we should implement a fallback that re-requests the
+        # installation_id for a project in case we can't request a
+        # token or can't access the repo at all (although we expect to
+        # do so).
+
+        owner, _ = project.split("/", 1)
+        installation_id = self.installation_map.get(owner, {}).get("id")
 
         if not installation_id:
-            if reprime:
-                # prime installation map and try again without refreshing
-                self._prime_install_map()
-                return self._get_installation_key(
-                    project, user_id=user_id, install_id=install_id, reprime=False
-                )
+            # Request the installation id for this orga
+            installation_id = self._get_installation_for_owner(owner)
+
+        if not installation_id:
+            # TODO (felix): If we still couldn't get the installation id,
+            # we most probably don't have access anymore.
             LOGGER.debug("No installation ID available for project %s", project)
+            # TODO (felix): Better return None?
             return ""
 
         # Look up the token from cache
@@ -110,9 +120,7 @@ class GitHubConnection:
                 self.api_url, installation_id
             )
 
-            json_data = {"user_id": user_id} if user_id else None
-
-            response = requests.post(url, headers=headers, json=json_data)
+            response = requests.post(url, headers=headers)
             response.raise_for_status()
 
             data = response.json()
@@ -129,6 +137,36 @@ class GitHubConnection:
             self.installation_token_cache[installation_id] = (token, expiry)
 
         return token
+
+    def _get_installation_for_owner(self, owner):
+        # TODO (felix): Fetch the installation id for the given owner,
+        # store it in the installation_map (together with the meta data)
+        # we got from github (e.g. projects + default branch -> necessary
+        # for scraping) and return the installation_id.
+
+        # TODO (felix): Does this also work for users? Usually an owner
+        # can be one of both, user or orga.
+        url = f"{self.api_url}/orgs/{owner}/installation"
+        headers = self._get_app_auth_headers()
+        LOGGER.debug("Fetching installation for owner '%s'", owner)
+
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+
+        data = response.json()
+
+        LOGGER.debug(data)
+
+        installation_id = data["id"]
+
+        # Store the installation id, so we don't have to retrieve it
+        # again (unless it changed).
+        self.installation_map[owner] = {"id": installation_id}
+
+        # TODO (felix): We should keep track on the repository data somehow
+        # to validate the default branch for the push events.
+
+        return installation_id
 
     def _prime_install_map(self):
         """Fetch all installations and look up the ID for each."""
