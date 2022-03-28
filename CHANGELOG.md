@@ -1,12 +1,13 @@
 # Changelog
 
-## Unreleased
+## 2.4.5
 
 ### Fixes
 - Remove the noreferrer header from the zubbi repository link in the footer
   to not leak internal URLs.
 - Use pagination when fetching installation ids from GitHub. So far, Zubbi
   only fetched the first 50 installations.
+- Ignore job file if there is syntax error when parsing yaml content.
 
 ## 2.4.4
 
