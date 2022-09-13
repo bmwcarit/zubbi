@@ -179,7 +179,7 @@ def github_response_access_token():
     expires_future = datetime.now(timezone.utc)
     expires_future += timedelta(minutes=10)
     response = {
-        "token": ""
+        "token": "THIS_IS_NOT_A_TOKEN",
         "expires_at": datetime.strftime(expires_future, "%Y-%m-%dT%H:%M:%SZ"),
     }
     return response
