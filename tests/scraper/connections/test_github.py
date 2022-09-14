@@ -58,6 +58,6 @@ def test_get_installation_key(mock_github_api_endpoints):
     }
 
     assert gh_con.installation_map == expected_installation_map
-    assert token_from_cache == "v1.token_foo"
-    assert token_for_project == "v1.token_foo"
+    assert token_from_cache == "THIS_IS_NOT_A_TOKEN"
+    assert token_for_project == "THIS_IS_NOT_A_TOKEN"
     assert isinstance(expires_at, datetime)
