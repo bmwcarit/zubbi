@@ -132,16 +132,25 @@ class GitHubConnection:
 
     def _prime_install_map(self):
         """Fetch all installations and look up the ID for each."""
-        url = "{}/app/installations".format(self.api_url)
+        url = "{}/app/installations?per_page=100".format(self.api_url)
         headers = self._get_app_auth_headers()
-        LOGGER.debug("Fetching installations for GitHub app")
+        page = 1
+        installations = []
 
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
+        while url:
+            LOGGER.debug("Fetching installations for GitHub app (page %s)", page)
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
 
-        data = response.json()
+            data = response.json()
+            page += 1
 
-        for install in data:
+            installations.extend(data)
+
+            # Check if we need to do further page calls
+            url = response.links.get("next", {}).get("url")
+
+        for install in installations:
             install_id = install.get("id")
             token = self._get_installation_key(project=None, install_id=install_id)
             headers = {
@@ -149,12 +158,16 @@ class GitHubConnection:
                 "Authorization": "token {}".format(token),
             }
 
+            page = 1
             url = "{}/installation/repositories?per_page=100".format(self.api_url)
             while url:
-                LOGGER.debug("Fetching repos for installation %s", install_id)
+                LOGGER.debug(
+                    "Fetching repos for installation %s (page %s)", install_id, page
+                )
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()
                 repos = response.json()
+                page += 1
 
                 # Store all projects in the installation map
                 for repo in repos.get("repositories", []):
