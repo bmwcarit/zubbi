@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixes
+- Remove the noreferrer header from the zubbi repository link in the footer
+  to not leak internal URLs.
+
 ## 2.4.4
 
 ### Fixes
