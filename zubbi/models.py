@@ -47,6 +47,49 @@ SEARCH_BOOST_FIELDS = {
     "description": "description^1.2",
 }
 
+RESERVED_CHARACTERS = [
+    "+",
+    "-",
+    "=",
+    "!",
+    "(",
+    ")",
+    "{",
+    "}",
+    "[",
+    "]",
+    "^",
+    '"',
+    "~",
+    "*",
+    "?",
+    ":",
+    "\\",
+    "/",
+    # Elasticsearch also uses the "&&" and "||" as reserved characters,
+    # but a translation table can only contain single characters. The
+    # simplest thing we can do here is to escape them as single
+    # characters. This should be fine since we haven't used them so far.
+    # In case this becomes a problem, we might want to escape them in
+    # a second replacement step without using a translation table.
+    "&",
+    "|",
+]
+
+TRANSLATION_TABLE = str.maketrans(
+    {
+        # Build a translation table from the list of reserved characters.
+        # This will prefix each character in the list with a '\'.
+        **{c: f"\\{c}" for c in RESERVED_CHARACTERS},
+        # ">" and "<" are also reserved characters, but according to the
+        # Elastichsearch documentation they can't be escaped at all. So
+        # we simply remove them. This shouldn't harm as range queries
+        # don't make any sense for us at the moment.
+        ">": "",
+        "<": "",
+    }
+)
+
 
 class ZubbiDoc(Document):
     """All documents which are scraped by Zubbi and stored in Elasticsearch."""
@@ -183,7 +226,7 @@ class BlockSearch(Search):
         super().__init__(
             index=self._select_index(index, block_class),
             doc_type=self._select_doc_type(doc_type, block_class),
-            **kwargs
+            **kwargs,
         )
 
     @staticmethod
@@ -208,7 +251,7 @@ class BlockSearch(Search):
         if exact:
             search_query = Q("multi_match", query=query, fields=fields)
         else:
-            query_string = "*{}*".format(query)
+            query_string = "*{}*".format(query.translate(TRANSLATION_TABLE))
             search_query = Q("query_string", query=query_string, fields=fields)
 
         extra_filter = extra_filter or []
