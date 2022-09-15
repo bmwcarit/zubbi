@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.4.4
+
+### Fixes
+- Fixed a bug that resulted in an internal server error when using a search
+  query that contains a '/' in zubbi-web.
+
 ## 2.4.3
 
 ### Fixes
