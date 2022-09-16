@@ -5,6 +5,8 @@
 ### Fixes
 - Remove the noreferrer header from the zubbi repository link in the footer
   to not leak internal URLs.
+- Use pagination when fetching installation ids from GitHub. So far, Zubbi
+  only fetched the first 50 installations.
 
 ## 2.4.4
 
