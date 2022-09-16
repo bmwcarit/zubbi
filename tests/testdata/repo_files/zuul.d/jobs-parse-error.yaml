@@ -1,0 +1,26 @@
+- job:
+    name: my-cool-new-job
+    parent: cool-base-job
+    description: |
+      This is just a job for testing purposes.
+
+      .. supported_os:: Linux
+
+      .. reusable:: True
+    run: playbooks/non-existing-playbook.yaml
+
+- job:
+    name: another-job
+    description: |
+      This time without a playbook and a parent.
+
+# Following two jobs has intentional parse error for testing
+-job:
+    name: cool-base-job
+    description: |
+      This is a base job with explicitly no parent.
+    parent: null
+
+-job:
+    name: no-description-job
+    parent: null

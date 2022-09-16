@@ -87,6 +87,10 @@ def repo_data():
             "content": raw_file("repo_files/zuul.d/no-jobs.yaml"),
             "blame": [],
         },
+        "zuul.d/jobs-parse-error.yaml": {
+            "content": raw_file("repo_files/zuul.d/jobs-parse-error.yaml"),
+            "blame": [],
+        },
     }
 
     role_files = {
