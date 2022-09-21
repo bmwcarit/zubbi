@@ -45,7 +45,7 @@ importlib-metadata==4.10.1; python_version < '3.10'
 iniconfig==1.1.1
 itsdangerous==2.0.1; python_version >= '3.6'
 jinja2==3.0.3; python_version >= '3.6'
-jwcrypto==1.0
+jwcrypto==1.4
 markupsafe==2.0.1; python_version >= '3.6'
 mccabe==0.6.1
 nodeenv==1.6.0
