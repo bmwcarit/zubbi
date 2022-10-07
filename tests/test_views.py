@@ -53,6 +53,55 @@ def test_detail_view(flask_client, es_client):
     assert b"<title>Details for role foo - Zubbi</title>" in rv.data
 
 
+@pytest.mark.parametrize(
+    "role_description_fields, expected_html_fragments",
+    [
+        (
+            {"description_html": "<p>Some cool html</p>"},
+            [b"<p>Some cool html</p>"],
+        ),
+        (
+            {"description": "Some plain text"},
+            [
+                b"<pre>Some plain text</pre>",
+                b"Looks like you could make your description look nicer",
+            ],
+        ),
+        (
+            {},
+            [b"Looks like no description could be found for this role"],
+        ),
+    ],
+)
+def test_detail_view_description(
+    flask_client, es_client, role_description_fields, expected_html_fragments
+):
+    # Build an ES response containing roles with different description fields
+    # available.
+    response = {
+        "hits": {
+            "hits": [
+                {
+                    "_index": "ansible-roles",
+                    "_type": "doc",
+                    "_source": {
+                        "role_name": "foo",
+                        "repo": "repo_name",
+                        **role_description_fields,
+                    },
+                },
+            ]
+        }
+    }
+
+    es_client.search.return_value = response
+    rv = flask_client.get("/detail/repo_name/role/foo")
+    assert rv.status == "200 OK"
+
+    for html_fragment in expected_html_fragments:
+        assert html_fragment in rv.data
+
+
 def test_detail_view_unknown_block_type(flask_client):
     rv = flask_client.get("/detail/repo_name/foobar/foo")
     assert rv.status == "400 BAD REQUEST"
