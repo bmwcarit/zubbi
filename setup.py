@@ -40,6 +40,7 @@ requires = [
     "readme_renderer[md]",
     "tabulate",
     "gitpython",
+    "markupsafe",
 ]
 
 setup(
