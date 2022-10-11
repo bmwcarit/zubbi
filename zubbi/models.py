@@ -15,7 +15,7 @@
 import collections
 import ssl
 
-import jinja2
+import markupsafe
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
     Boolean,
@@ -170,9 +170,9 @@ class Block(ZubbiDoc):
 
     def _renderable_field(self, html, raw):
         if html:
-            return jinja2.Markup(html)
+            return markupsafe.Markup(html)
         elif raw:
-            return jinja2.Markup("<pre>{}</pre>".format(jinja2.escape(raw)))
+            return markupsafe.Markup("<pre>{}</pre>".format(markupsafe.escape(raw)))
 
 
 class AnsibleRole(Block):
