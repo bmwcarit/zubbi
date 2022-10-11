@@ -91,7 +91,7 @@ def test_webhook_view_get(flask_client):
 
 
 def test_webhook_view_missing_payload(flask_client):
-    rv_post_empty = flask_client.post("/api/webhook")
+    rv_post_empty = flask_client.post("/api/webhook", json={})
     assert rv_post_empty.status == "400 BAD REQUEST"
     assert rv_post_empty.get_json() == {
         "error": 400,
