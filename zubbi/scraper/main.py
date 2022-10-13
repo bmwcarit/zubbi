@@ -559,9 +559,14 @@ def scrape_repo(repo, tenants, reusable_repos, scrape_time):
     job_files, role_files = Scraper(repo).scrape()
 
     is_rusable_repo = repo.repo_name in reusable_repos
-    jobs, roles = RepoParser(
-        repo, tenants, job_files, role_files, scrape_time, is_rusable_repo
-    ).parse()
+    jobs = []
+    roles = []
+    try:
+        jobs, roles = RepoParser(
+            repo, tenants, job_files, role_files, scrape_time, is_rusable_repo
+        ).parse()
+    except Exception:
+        LOGGER.exception("Unable to parse job or role definitions in repo '%s'", repo)
 
     LOGGER.info("Updating %d job definitions in Elasticsearch", len(jobs))
     ZuulJob.bulk_save(jobs)

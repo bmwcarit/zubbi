@@ -54,11 +54,27 @@ class Scraper:
     def scrape_job_files(self):
 
         job_files = self.iterate_directory(
-            REPO_ROOT, whitelist=ZUUL_DIRECTORIES + ZUUL_FILES
+            REPO_ROOT,
+            whitelist=ZUUL_DIRECTORIES + ZUUL_FILES,
+            # NOTE (felix): As we provide this directly to the
+            # str.endswith() method, the argument must be a str or a
+            # tuple of strings, otherwise the following exception is
+            # raised:
+            #
+            # TypeError: endswith first arg must be str or a tuple of
+            # str, not list
+            file_extensions=(".yaml"),
         )
         return job_files
 
-    def iterate_directory(self, path, file_infos=None, whitelist=None):
+    def iterate_directory(
+        self, path, file_infos=None, whitelist=None, file_extensions=None
+    ):
+        if file_extensions is None:
+            # By default, we don't want to filter any files, so we use
+            # an empty string as default "extension".
+            file_extensions = ""
+
         if file_infos is None:
             file_infos = {}
 
@@ -73,7 +89,9 @@ class Scraper:
 
             if remote_file.type == "dir":
                 try:
-                    self.iterate_directory(remote_file.path, file_infos)
+                    self.iterate_directory(
+                        remote_file.path, file_infos, file_extensions=file_extensions
+                    )
                 except CheckoutError as e:
                     LOGGER.exception(
                         "Unable to get check out directory '%s': %s",
@@ -81,6 +99,14 @@ class Scraper:
                         e,
                     )
             elif remote_file.type == "file":
+                # Skip files that don't match the required extension
+                if not file_name.endswith(file_extensions):
+                    LOGGER.debug(
+                        "Skipping file '%s' as file matchers %s don't apply",
+                        file_name,
+                        file_extensions,
+                    )
+                    continue
                 file_info = self.get_file_info(remote_file.path)
                 if file_info:
                     file_infos[remote_file.path] = file_info

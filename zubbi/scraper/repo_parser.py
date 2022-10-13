@@ -19,6 +19,7 @@ import yaml
 from yaml.composer import Composer
 from yaml.constructor import Constructor
 from yaml.parser import ParserError
+from yaml.scanner import ScannerError
 
 from zubbi.doc import render_file, render_sphinx, SphinxBuildError
 from zubbi.models import AnsibleRole, ZuulJob
@@ -66,7 +67,7 @@ class RepoParser:
     def parse_job_definitions(self, file_path, job_info):
         try:
             jobs_yaml = yaml.load(job_info["content"], Loader=ZuulSafeLoader)
-        except ParserError as e:
+        except (ParserError, ScannerError) as e:
             LOGGER.warning("Error parsing file %s, error: %s", file_path, str(e))
             return []
 
