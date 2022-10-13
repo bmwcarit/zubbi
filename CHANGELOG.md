@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.4.6
+
+### Fixes
+- Filter job files for *.yaml extension before parsing to avoid yaml parser
+  errors. So far, Zubbi was parsing all files (including e.g. a README.md file)
+  within the jobs directory which made the parser fail.
+- Make the RepoParser more robust against files with invalid yaml content. In
+  case an error occurs during job or role parsing this should now only affect
+  the current repository but not the whole scraper run.
+
 ## 2.4.5
 
 ### Fixes
