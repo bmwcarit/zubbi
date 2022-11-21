@@ -78,7 +78,15 @@ class Scraper:
         if file_infos is None:
             file_infos = {}
 
-        remote_files = self.repo.directory_contents(path)
+        try:
+            remote_files = self.repo.directory_contents(path)
+        except CheckoutError:
+            LOGGER.exception(
+                "Unable to check out repository root. The repository might be empty."
+            )
+            # As this is the initial directory, it doesn't make much sense
+            # to go any further.
+            return file_infos
 
         for file_name, remote_file in remote_files.items():
             # Skip files/directories that do not match the whitelist.

@@ -52,10 +52,19 @@ class MockContents:
 
 class MockGitHubRepository(GitHubRepository):
 
+    # TODO (felix): Improve the mocked repository class and allow mocking
+    # single repositories for certain test cases. Currently, all test repos
+    # are defined in this class definition.
+    # TODO (felix): While doing that, we could also simplify the structure of
+    # the testdata within the repository to accept paths and build the
+    # "directories" underhood for all parts within a certan path.
+    # -> So we end up to use one dict key per file within the repo don't need
+    # to specify each directory.
+
     # project/directory_or_filename
     test_data = {
         "orga1/repo1": {
-            "/": {
+            REPO_ROOT: {
                 "zuul.d": MockContents("zuul.d", MockContents.DIR),
                 "roles": MockContents("roles", MockContents.DIR),
             },
@@ -73,6 +82,9 @@ class MockGitHubRepository(GitHubRepository):
             "roles/ignored": MockContents("not a valid role", MockContents.FILE),
         },
         "orga1/repo2": {
+            REPO_ROOT: {
+                "roles": MockContents("roles", MockContents.DIR),
+            },
             "roles": {
                 "foo": MockContents("roles/foo", MockContents.DIR),
                 "bar": MockContents("roles/bar", MockContents.DIR),
@@ -98,6 +110,9 @@ class MockGitHubRepository(GitHubRepository):
             "roles/foobar/README": "Simple text in a file without extension",
             "roles/empty-dir/REAMDE.whatever": "This file won't be checked out",
         },
+        # Empty repositories
+        "orga2/repo1": {},
+        "orga2/repo3": {},
     }
 
     def __init__(self, repo_name):
@@ -111,13 +126,7 @@ class MockGitHubRepository(GitHubRepository):
         try:
             return self.test_data[self.repo_name][directory_path]
         except KeyError:
-            if directory_path == REPO_ROOT:
-                # In real-world use cases, the repo_root should exist, otherwise
-                # something went really wrong.
-                # As I don't want to mock this path for each repository, just
-                # return an empty dict (assuming the directory is empty)
-                return {}
-            raise CheckoutError("Directory {} does not exist in repo", directory_path)
+            raise CheckoutError(directory_path, "Directory does not exist in repo.")
 
     def file_contents(self, file_path):
         # Just return different file contents based on the combination of
@@ -125,7 +134,7 @@ class MockGitHubRepository(GitHubRepository):
         try:
             return self.test_data[self.repo_name][file_path]
         except KeyError:
-            raise CheckoutError("File {} does not exist in repo", file_path)
+            raise CheckoutError(file_path, "File does not exist in repo.")
 
     def last_changed(self, path):
         return "2018-09-17 15:15:15"
