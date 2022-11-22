@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.4.7
+
+### Fixes
+- Fixed a bug that made zubbi-scraper crash on empty repositories.
+
 ## 2.4.6
 
 ### Fixes
