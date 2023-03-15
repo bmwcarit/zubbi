@@ -68,7 +68,7 @@ def configure_logger(verbosity):
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
     log_formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] %(message)s", datefmt="%Y-%m-%dT%H:%M:%SZ"
+        "%(asctime)s %(levelname)s [%(name)s] %(message)s"
     )
     console_handler.setFormatter(log_formatter)
 
