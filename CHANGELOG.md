@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.4.8
+- Switch to default python dateformat for log messages
+
 ## 2.4.7
 
 ### Fixes
