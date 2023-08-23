@@ -13,9 +13,11 @@
 # limitations under the License.
 
 import collections
+import logging
 import ssl
 
 import markupsafe
+from elasticsearch.exceptions import ElasticsearchException
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
     Boolean,
@@ -30,6 +32,7 @@ from elasticsearch_dsl import (
     Text,
 )
 
+LOGGER = logging.getLogger(__name__)
 
 DEFAULT_ES_PORT = 9200
 DEFAULT_SUGGEST_SIZE = 5
@@ -110,9 +113,12 @@ class ZubbiDoc(Document):
     # https://github.com/elastic/elasticsearch-dsl-py/issues/403
     @classmethod
     def bulk_save(cls, docs):
-        objects = (d.to_dict(include_meta=True) for d in docs)
-        client = connections.get_connection()
-        return bulk(client, objects)
+        try:
+            objects = (d.to_dict(include_meta=True) for d in docs)
+            client = connections.get_connection()
+            return bulk(client, objects)
+        except ElasticsearchException:
+            LOGGER.exception("Writing data to Elasticsearch failed")
 
 
 class ZuulTenant(ZubbiDoc):
@@ -333,14 +339,24 @@ def init_elasticsearch(app):
 
 
 def init_elasticsearch_con(
-    host, user=None, password=None, port=None, index_prefix=None, tls=None
+    host,
+    user=None,
+    password=None,
+    port=None,
+    connection_params=None,
+    index_prefix=None,
+    tls=None,
 ):
-    http_auth = None
+    if connection_params is None:
+        connection_params = {}
+
+    connection_params["host"] = host
     # Set authentication parameters if available
     if user and password:
-        http_auth = (user, password)
+        connection_params["http_auth"] = (user, password)
     if port is None:
         port = DEFAULT_ES_PORT
+    connection_params["port"] = port
 
     # Create ssl context if enabled
     ssl_context = None
@@ -352,10 +368,9 @@ def init_elasticsearch_con(
 
     # Somehow the SSL context is not enough, we must also pass the use_ssl=True
     use_ssl = ssl_context is not None
+
     connections.create_connection(
-        host=host,
-        http_auth=http_auth,
-        port=port,
+        **connection_params,
         use_ssl=use_ssl,
         ssl_context=ssl_context,
     )
