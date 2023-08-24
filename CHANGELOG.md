@@ -1,6 +1,13 @@
 # Changelog
 
+## 2.5.0
+
+### New Features
+- Allow additional connection parameters to be set on Elasticsearch connection
+
 ## 2.4.8
+
+### General
 - Switch to default python dateformat for log messages
 
 ## 2.4.7
