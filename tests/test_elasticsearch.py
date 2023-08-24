@@ -52,14 +52,22 @@ def test_elasticsearch_init_ssl(elmock):
 
 
 def test_elasticsearch_init(elmock):
-
     # Define the existing indices for the mock
     existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
     elmock.return_value.indices.exists.side_effect = (
         lambda index: index in existing_indices
     )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password")
+    init_elasticsearch_con(
+        "127.0.0.1",
+        "user",
+        "password",
+        connection_params={
+            "timeout": 30,
+            "max_retries": 3,
+            "retry_on_timeout": True,
+        },
+    )
 
     # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
     # was called with the correct arguments.
@@ -69,6 +77,9 @@ def test_elasticsearch_init(elmock):
         http_auth=("user", "password"),
         use_ssl=False,
         ssl_context=None,
+        timeout=30,
+        max_retries=3,
+        retry_on_timeout=True,
         serializer=serializer,
     )
 
@@ -91,7 +102,6 @@ def test_elasticsearch_init(elmock):
 
 
 def test_elasticsearch_init_with_prefix(elmock):
-
     # Define the existing indices for the mock
     existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
     elmock.return_value.indices.exists.side_effect = (
@@ -130,7 +140,6 @@ def test_elasticsearch_init_with_prefix(elmock):
 
 
 def test_elasticsearch_init_with_empty_prefix(elmock):
-
     # Define the existing indices for the mock
     existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
     elmock.return_value.indices.exists.side_effect = (
@@ -158,7 +167,6 @@ def test_elasticsearch_init_with_empty_prefix(elmock):
 
 
 def test_elasticsearch_init_with_prefix_multi(elmock):
-
     # Define the existing indices for the mock
     existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
     elmock.return_value.indices.exists.side_effect = (
