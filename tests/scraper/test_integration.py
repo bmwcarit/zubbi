@@ -29,6 +29,33 @@ MOCKED_JOB_CONTENT = """
     run: playbooks/non-existing-playbook.yaml
 """
 
+MOCKED_JOB_CONTENT_2 = """
+- job:
+    name: even-cooler-new-job
+    parent: super-base-job
+    description: |
+      This is another job for testing purposes.
+    run: playbooks/non-existing-super-playbook.yaml
+"""
+
+MOCKED_PROJECT_CONTENT = """
+- job:
+    name: super-duper-new-job
+    parent: lame-base-job
+    description: |
+      This is yet another job for testing purposes.
+    run: playbooks/non-existing-hyper-playbook.yaml
+
+- project:
+    name: my-simple-project
+    check:
+      jobs:
+        - noop
+    gate:
+      jobs:
+        - super-duper-new-job
+"""
+
 MOCKED_ROLE_DESCRIPTION = """
 Role description containing some reStructuredText expressions.
 
@@ -109,6 +136,19 @@ class MockGitHubRepository(GitHubRepository):
             "roles/bar/README.txt": "Just some simple text\nwith a line break",
             "roles/foobar/README": "Simple text in a file without extension",
             "roles/empty-dir/REAMDE.whatever": "This file won't be checked out",
+        },
+        "orga1/repo3": {
+            REPO_ROOT: {
+                "project-extra.yaml": MockContents(
+                    "project-extra.yaml", MockContents.FILE
+                ),
+                "zuul-extra.d": MockContents("zuul-extra.d", MockContents.DIR),
+            },
+            "project-extra.yaml": MOCKED_PROJECT_CONTENT,
+            "zuul-extra.d": {
+                "jobs.yaml": MockContents("zuul-extra.d/jobs.yaml", MockContents.FILE)
+            },
+            "zuul-extra.d/jobs.yaml": MOCKED_JOB_CONTENT_2,
         },
         # Empty repositories
         "orga2/repo1": {},
@@ -206,6 +246,39 @@ def test_scrape():
                 },
             },
         ),
+        "orga1/repo3": (
+            {
+                "project-extra.yaml": {
+                    "last_changed": "2018-09-17 15:15:15",
+                    "blame": [],
+                    "content": "\n- job:\n"
+                    "    name: super-duper-new-job\n"
+                    "    parent: lame-base-job\n"
+                    "    description: |\n"
+                    "      This is yet another job for testing purposes.\n"
+                    "    run: playbooks/non-existing-hyper-playbook.yaml\n"
+                    "\n- project:\n"
+                    "    name: my-simple-project\n"
+                    "    check:\n"
+                    "      jobs:\n"
+                    "        - noop\n"
+                    "    gate:\n"
+                    "      jobs:\n"
+                    "        - super-duper-new-job\n",
+                },
+                "zuul-extra.d/jobs.yaml": {
+                    "last_changed": "2018-09-17 15:15:15",
+                    "blame": [],
+                    "content": "\n- job:\n"
+                    "    name: even-cooler-new-job\n"
+                    "    parent: super-base-job\n"
+                    "    description: |\n"
+                    "      This is another job for testing purposes.\n"
+                    "    run: playbooks/non-existing-super-playbook.yaml\n",
+                },
+            },
+            {},
+        ),
         "orga2/repo1": ({}, {}),
         "orga2/repo3": ({}, {}),
     }
@@ -221,7 +294,14 @@ def test_scrape():
 
     for repo, tenants in repo_map.items():
         gh_repo = MockGitHubRepository(repo)
-        job_files, role_files = Scraper(gh_repo).scrape()
+        extra_config_paths = tenants["tenants"].get("extra_config_paths", {})
+        if repo == "orga1/repo2":
+            assert len(extra_config_paths) == 1
+        elif repo == "orga1/repo3":
+            assert len(extra_config_paths) == 2
+        else:
+            assert len(extra_config_paths) == 0
+        job_files, role_files = Scraper(gh_repo, extra_config_paths).scrape()
         assert (job_files, role_files) == expected[repo]
 
 

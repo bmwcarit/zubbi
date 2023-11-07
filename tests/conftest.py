@@ -76,7 +76,11 @@ def repo_data():
     # and the other one is used for the parser.
     repo = DummyRepo("my/project")
 
-    tenants = {"jobs": ["foo"], "roles": ["foo", "bar"]}
+    tenants = {
+        "jobs": ["foo"],
+        "roles": ["foo", "bar"],
+        "extra_config_paths": {"zuul-extra.d": ["bar"]},
+    }
 
     job_files = {
         "zuul.d/jobs.yaml": {
@@ -89,6 +93,10 @@ def repo_data():
         },
         "zuul.d/jobs-parse-error.yaml": {
             "content": raw_file("repo_files/zuul.d/jobs-parse-error.yaml"),
+            "blame": [],
+        },
+        "zuul-extra.d/extra-jobs.yaml": {
+            "content": raw_file("repo_files/zuul-extra.d/extra-jobs.yaml"),
             "blame": [],
         },
     }
