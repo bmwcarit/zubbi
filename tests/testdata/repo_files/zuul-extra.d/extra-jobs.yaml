@@ -1,0 +1,4 @@
+- job:
+    name: awesome-job
+    description: |
+      Job in custom directory, without a playbook or parent.

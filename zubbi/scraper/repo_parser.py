@@ -31,7 +31,13 @@ LOGGER = logging.getLogger(__name__)
 
 class RepoParser:
     def __init__(
-        self, repo, tenants, job_files, role_files, scrape_time, is_reusable_repo
+        self,
+        repo,
+        tenants,
+        job_files,
+        role_files,
+        scrape_time,
+        is_reusable_repo,
     ):
         self.repo = repo
         self.tenants = tenants
@@ -64,6 +70,15 @@ class RepoParser:
             # LOGGER.debug(json.dumps(repo_jobs, indent=4))
         return repo_jobs
 
+    def _get_job_tenants(self, file_path):
+        extra_config_paths = self.tenants.get("extra_config_paths", {})
+        tenants = self.tenants["jobs"]
+        for extra_config_path in extra_config_paths.keys():
+            if file_path.startswith(extra_config_path):
+                tenants = extra_config_paths[extra_config_path]
+                break
+        return tenants
+
     def parse_job_definitions(self, file_path, job_info):
         try:
             jobs_yaml = yaml.load(job_info["content"], Loader=ZuulSafeLoader)
@@ -83,7 +98,7 @@ class RepoParser:
                 job = ZuulJob(meta={"id": uuid})
                 job.job_name = job_name
                 job.repo = self.repo.name
-                job.tenants = self.tenants["jobs"]
+                job.tenants = self._get_job_tenants(file_path)
                 job.private = self.repo.private
                 job.scrape_time = self.scrape_time
                 job.line_start = job_def["__line_start__"]

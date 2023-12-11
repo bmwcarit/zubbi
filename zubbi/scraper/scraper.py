@@ -33,8 +33,11 @@ REPO_ROOT = "/"
 
 
 class Scraper:
-    def __init__(self, repo):
+    def __init__(self, repo, extra_config_paths=None):
         self.repo = repo
+        self.extra_config_paths = (
+            list(extra_config_paths.keys()) if extra_config_paths else []
+        )
 
     def scrape(self):
         LOGGER.info("Scraping '%s'", self.repo.name)
@@ -55,7 +58,7 @@ class Scraper:
 
         job_files = self.iterate_directory(
             REPO_ROOT,
-            whitelist=ZUUL_DIRECTORIES + ZUUL_FILES,
+            whitelist=ZUUL_DIRECTORIES + ZUUL_FILES + self.extra_config_paths,
             # NOTE (felix): As we provide this directly to the
             # str.endswith() method, the argument must be a str or a
             # tuple of strings, otherwise the following exception is

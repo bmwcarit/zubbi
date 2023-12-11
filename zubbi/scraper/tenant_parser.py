@@ -14,6 +14,7 @@
 
 import logging
 import os
+from collections import defaultdict
 
 import yaml
 
@@ -62,7 +63,7 @@ class TenantParser:
             self.tenants.append(tenant_name)
 
     def _update_repo_map(self, project, connection_name, tenant):
-        project_name, exclude = self._extract_project(project)
+        project_name, exclude, extra_config_paths = self._extract_project(project)
 
         # Map the current tenant to the current repository
         repo_tenant_entry = self.repo_map.setdefault(
@@ -75,14 +76,27 @@ class TenantParser:
             repo_tenant_entry["tenants"]["jobs"].append(tenant)
         repo_tenant_entry["tenants"]["roles"].append(tenant)
 
+        if extra_config_paths:
+            repo_tenant_extra_config_paths = repo_tenant_entry["tenants"].setdefault(
+                "extra_config_paths", defaultdict(lambda: [])
+            )
+            for extra_config_path in extra_config_paths:
+                repo_tenant_extra_config_paths[extra_config_path].append(tenant)
+
     def _extract_project(self, project):
         project_name = project
         exclude = []
+        extra_config_paths = []
         if type(project) is dict:
             # Get the first key of the dict containing the project name.
             project_name = list(project.keys())[0]
-            exclude = project.get("exclude", [])
-        return project_name, exclude
+            exclude = project[project_name].get("exclude", [])
+            # NOTE (swietlicki): directories in extra-config-path section contain
+            # trailing slash, while inside the Scraper.iterate_directory() the comparison
+            # is done against dir names without trailing slash
+            for item in project[project_name].get("extra-config-paths", []):
+                extra_config_paths.append(item[:-1] if item.endswith("/") else item)
+        return project_name, exclude, extra_config_paths
 
     def _load_tenant_sources_from_file(self, sources_file):
         LOGGER.info("Parsing tenant sources file '%s'", sources_file)

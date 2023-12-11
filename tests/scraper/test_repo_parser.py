@@ -30,7 +30,12 @@ def test_parse(repo_data):
     repo, tenants, job_files, role_files = repo_data
 
     jobs, roles = RepoParser(
-        repo, tenants, job_files, role_files, scrape_time, is_reusable_repo=False
+        repo,
+        tenants,
+        job_files,
+        role_files,
+        scrape_time,
+        is_reusable_repo=False,
     ).parse()
 
     # We assume that we can access the resulting jobs and roles dictionary
@@ -39,6 +44,7 @@ def test_parse(repo_data):
     job_2 = jobs[1]
     job_3 = jobs[2]
     job_4 = jobs[3]
+    job_5 = jobs[4]
     role_1 = [r for r in roles if r["role_name"] == "foo"][0]
     role_2 = [r for r in roles if r["role_name"] == "bar"][0]
 
@@ -105,6 +111,23 @@ def test_parse(repo_data):
         "reusable": False,
         "line_start": 23,
         "line_end": 25,
+        "scrape_time": scrape_time,
+        "last_updated": None,
+    }
+
+    expected_job_5 = {
+        "job_name": "awesome-job",
+        "repo": "my/project",
+        "tenants": ["bar"],
+        "description": "Job in custom directory, without a playbook or parent.\n",
+        "description_html": "<p>Job in custom directory, without a playbook or parent.</p>\n",
+        "parent": "base",
+        "url": "https://github/zuul-extra.d/extra-jobs.yaml",
+        "private": False,
+        "platforms": [],
+        "reusable": False,
+        "line_start": 1,
+        "line_end": 4,
         "scrape_time": scrape_time,
         "last_updated": None,
     }
@@ -198,6 +221,7 @@ def test_parse(repo_data):
     assert job_2.to_dict(skip_empty=False) == expected_job_2
     assert job_3.to_dict(skip_empty=False) == expected_job_3
     assert job_4.to_dict(skip_empty=False) == expected_job_4
+    assert job_5.to_dict(skip_empty=False) == expected_job_5
     assert role_1.to_dict(skip_empty=False) == expected_role_1
     assert role_2.to_dict(skip_empty=False) == expected_role_2
 
@@ -208,7 +232,12 @@ def test_parse_reusable_repo(repo_data):
     repo, tenants, job_files, role_files = repo_data
 
     jobs, roles = RepoParser(
-        repo, tenants, job_files, role_files, scrape_time, is_reusable_repo=True
+        repo,
+        tenants,
+        job_files,
+        role_files,
+        scrape_time,
+        is_reusable_repo=True,
     ).parse()
 
     # We assume that we can access the resulting jobs and roles dictionary

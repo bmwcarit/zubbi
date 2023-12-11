@@ -7,9 +7,18 @@
           - orga1/repo1:
               exclude: [pipeline, project]
           - orga1/repo2
+          - orga1/repo3:
+              exclude:
+                - project
+                - pipeline
+              extra-config-paths:
+                - project-extra.yaml
+                - zuul-extra.d/
           - orga2/repo1
         untrusted-projects:
           - orga2/repo1: {shadow: orga1/repo2}
           - orga1/repo2:
               exclude: [project]
+              extra-config-paths:
+                - zuul-extra.d/
           - orga2/repo3
