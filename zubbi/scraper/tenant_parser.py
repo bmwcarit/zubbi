@@ -63,7 +63,12 @@ class TenantParser:
             self.tenants.append(tenant_name)
 
     def _update_repo_map(self, project, connection_name, tenant):
-        project_name, exclude, extra_config_paths = self._extract_project(project)
+        result = self._extract_project(project)
+        if result is None:
+            return
+
+        # Extract tuple values from result
+        project_name, exclude, extra_config_paths = result
 
         # Map the current tenant to the current repository
         repo_tenant_entry = self.repo_map.setdefault(
@@ -72,7 +77,7 @@ class TenantParser:
         )
 
         # Update repo_tenant mapping
-        if "jobs" not in exclude:
+        if "job" not in exclude:
             repo_tenant_entry["tenants"]["jobs"].append(tenant)
         repo_tenant_entry["tenants"]["roles"].append(tenant)
 
@@ -84,12 +89,41 @@ class TenantParser:
                 repo_tenant_extra_config_paths[extra_config_path].append(tenant)
 
     def _extract_project(self, project):
+        # This covers the default case where a project is a simple string
         project_name = project
         exclude = []
         extra_config_paths = []
+        # If a project is a dictionary, we have to look up and evaluate
+        # certain attributes:
         if type(project) is dict:
             # Get the first key of the dict containing the project name.
+            # NOTE: The dict should only contain a single key since each
+            # project is a dict entry in a list.
             project_name = list(project.keys())[0]
+
+            if "projects" in project:
+                # TODO (felix): This is kind of a "reverse" structure,
+                # which is usually used to include/exclude the same
+                # configuration items for a lot of projects.
+                # This use case is currently not covered in Zubbi, but
+                # we might want to implement this later on.
+                #
+                # Examples:
+                #
+                # # Include nothing from projects foo, bar
+                # - include: []
+                #   projects:
+                #     - foo
+                #     - bar
+                #
+                # # Exclude jobs and semaphores from foo
+                # - exclude:
+                #     - job
+                #     - semaphore
+                #   projects:
+                #     - foo
+                return
+
             exclude = project[project_name].get("exclude", [])
             # NOTE (swietlicki): directories in extra-config-path section contain
             # trailing slash, while inside the Scraper.iterate_directory() the comparison
