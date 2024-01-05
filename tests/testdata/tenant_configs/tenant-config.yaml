@@ -1,0 +1,62 @@
+- tenant:
+    name: foo
+    source:
+      github:
+        config-projects:
+          - orga1/repo1:
+              extra-config-paths:
+                - zuul-extra.d/
+              exclude:
+                - project
+                - pipeline
+                - job
+
+          - orga1/repo2:
+              exclude: project
+
+          - orga1/repo3
+
+          - orga1/repo4:
+              include:
+                - job
+                - secret
+
+        untrusted-projects:
+          - orga2/repo1:
+              include: []
+
+          - orga2/repo2:
+              shadow: orga1/repo1
+              exclude: project
+
+          - orga2/repo3
+
+          # This format is currently not supported but Zubbi and will be
+          # ignored.
+          - include: []
+            projects:
+              - orga3/repo1
+              - orga3/repo2
+
+          # This format is currently not supported but Zubbi and will be
+          # ignored.
+          - exclude:
+              - job
+              - secret
+            projects:
+              - orga3/repo3
+              - orga3/repo4
+
+- tenant:
+    name: bar
+    source:
+      github:
+        config-projects:
+          - orga1/repo1
+          - orga2/repo1:
+              include:
+                - job
+        untrusted-projects:
+          - orga2/repo2:
+              exclude:
+                - job
