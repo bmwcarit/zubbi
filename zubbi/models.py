@@ -17,7 +17,7 @@ import logging
 import ssl
 
 import markupsafe
-from elasticsearch.exceptions import ElasticsearchException
+from elasticsearch.exceptions import ApiError, TransportError
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
     Boolean,
@@ -117,7 +117,7 @@ class ZubbiDoc(Document):
             objects = (d.to_dict(include_meta=True) for d in docs)
             client = connections.get_connection()
             return bulk(client, objects)
-        except ElasticsearchException:
+        except (TransportError, ApiError):
             LOGGER.exception("Writing data to Elasticsearch failed")
 
 
