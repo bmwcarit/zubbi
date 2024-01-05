@@ -88,7 +88,6 @@ def test_init_gerrit_con_invalid_webtype(patch_es):
 
 
 def test_init_github_con(patch_es, mock_github_api_endpoints):
-
     mock_github_api_endpoints("https://localhost/github")
     config = {
         "ES_HOST": "localhost",

@@ -80,7 +80,6 @@ def test_event_installation_created(
 def test_event_installation_deleted(
     scrape_mock, patched_connections, payload_webhook_installation_deleted
 ):
-
     # Ensure that some repositories can be looked up for this installation as they
     # are not part of the payload for a delete event.
     with mock.patch(

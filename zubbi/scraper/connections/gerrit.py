@@ -59,7 +59,6 @@ class GitwebUrlBuilder:
 
 
 class GerritConnection(GitConnection):
-
     WEB_URL_BUILDERS = {"cgit": CGitUrlBuilder, "gitweb": GitwebUrlBuilder}
 
     # TODO (felix): Should we ensure that only the user that started zubbi has access rights

@@ -31,7 +31,6 @@ def test_views_reachable(flask_client, endpoint, expected):
 
 
 def test_detail_view(flask_client, es_client):
-
     # Build a simple ES response, containing a minimal role result
     response = {
         "hits": {
