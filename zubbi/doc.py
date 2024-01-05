@@ -20,41 +20,56 @@ import pathlib
 import sys
 import tempfile
 
-from docutils.parsers.rst import Directive
 from readme_renderer import markdown
 from sphinx.application import Sphinx
 from sphinx.util import logging as sphinx_logging
 from sphinx.util.console import nocolor
-from sphinx.util.docutils import docutils_namespace, patch_docutils
+from sphinx.util.docutils import docutils_namespace, patch_docutils, SphinxDirective
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-class ZubbiDirective(Directive):
+class ZubbiDirective(SphinxDirective):
     has_content = True
     required_arguments = 0
     optional_arguments = 1
     final_argument_whitespace = True
     logger = sphinx_logging.getLogger("ZubbiDirective")
 
-    def run(self):
-
-        if len(self.arguments) > 0:
-            values = self.arguments[0].split(",")
-            for value in values:
-                # Log the value with directive_name for later extraction
-                self.logger.info("%s: %s", self.directive_name, value)
-        # We don't want to render anything, so we return an empty list of nodes
-        return []
-
 
 class SupportedOS(ZubbiDirective):
     directive_name = "supported_os"
 
+    def run(self):
+        if len(self.arguments) > 0:
+            values = self.arguments[0].split(",")
+            # Store the platforms in Sphinx' domain data, so we can extract
+            # them later on during the rendering process.
+            # NOTE (felix): The "correct" solution might be to define a own
+            # domain and let the domain create the initial domaindata, e.g.
+            # https://opendev.org/zuul/zuul-sphinx/src/branch/master/zuul_sphinx/zuul.py#L714
+            # However, as a simple solution, this should be sufficient.
+            zubbi_domain_data = self.env.domaindata.setdefault("zubbi", {})
+            zubbi_domain_data["platforms"] = [v.strip().lower() for v in values]
+        # We don't want to render anything, so we return an empty list of nodes
+        return []
+
 
 class Reusable(ZubbiDirective):
     directive_name = "reusable"
+
+    def run(self):
+        reusable = False
+        if len(self.arguments) > 0:
+            reusable = self.arguments[0].strip().lower() in ["true", "yes"]
+        # Store the platforms in Sphinx' domain data, so we can extract
+        # them later on during the rendering process.
+        zubbi_domain_data = self.env.domaindata.setdefault("zubbi", {})
+        zubbi_domain_data["reusable"] = reusable
+
+        # We don't want to render anything, so we return an empty list of nodes
+        return []
 
 
 class SphinxBuildError(RuntimeError):
@@ -103,16 +118,11 @@ def render_sphinx(content):
             if app.statuscode:
                 raise SphinxBuildError
 
-        # Extract the platforms from the logger output
-        platforms = []
-        reusable = False
-        status_log.seek(0)
-        for line in status_log.readlines():
-            prefix, _, value = line.partition(":")
-            if prefix == SupportedOS.directive_name:
-                platforms.append(value.strip().lower())
-            elif prefix == Reusable.directive_name:
-                reusable = value.strip().lower() in ["true", "yes"]
+            # Extract the data from our custom directives from the domain data
+            zubbi_domain_data = app.env.domaindata.get("zubbi", {})
+            platforms = zubbi_domain_data.get("platforms", [])
+            reusable = zubbi_domain_data.get("reusable", False)
+
         with build_path.open() as build:
             html_parts = json.load(build)
 
