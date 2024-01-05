@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.6.1
+
+### Fixes
+- Fixed a bug in the tenant parser that made zubbi-scraper crash when a tenant
+  config file contained a special project format.
+
+## 2.6.0
+
+### New Features
+- Zubbi now parses job definitions provided via `extra-config-paths`
+  configuration files.
+
 ## 2.5.0
 
 ### New Features
