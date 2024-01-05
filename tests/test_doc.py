@@ -59,16 +59,16 @@ def test_render_sphinx_yaml_code(readme_yaml_code):
         '<div class="highlight-yaml notranslate"><div class="highlight">'
         '<pre><span></span><span class="p p-Indicator">-</span>'
         '<span class="w"> </span><span class="nt">job</span>'
-        '<span class="p">:</span><span class="w"></span>\n'
+        '<span class="p">:</span>\n'
         '<span class="w">    </span><span class="nt">name</span>'
         '<span class="p">:</span><span class="w"> </span>'
-        '<span class="l l-Scalar l-Scalar-Plain">foo</span><span class="w"></span>\n'
+        '<span class="l l-Scalar l-Scalar-Plain">foo</span>\n'
         '<span class="w">    </span><span class="nt">parent</span>'
         '<span class="p">:</span><span class="w"> </span>'
-        '<span class="l l-Scalar l-Scalar-Plain">bar</span><span class="w"></span>\n'
+        '<span class="l l-Scalar l-Scalar-Plain">bar</span>\n'
         '<span class="w">    </span><span class="nt">playbook</span>'
         '<span class="p">:</span><span class="w"> </span>'
-        '<span class="l l-Scalar l-Scalar-Plain">foo-bar.yaml</span><span class="w"></span>\n'
+        '<span class="l l-Scalar l-Scalar-Plain">foo-bar.yaml</span>\n'
         "</pre></div>\n"
         "</div>\n"
     )
