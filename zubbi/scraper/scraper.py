@@ -55,7 +55,6 @@ class Scraper:
         return job_files, role_files
 
     def scrape_job_files(self):
-
         job_files = self.iterate_directory(
             REPO_ROOT,
             whitelist=ZUUL_DIRECTORIES + ZUUL_FILES + self.extra_config_paths,

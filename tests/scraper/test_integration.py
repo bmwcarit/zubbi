@@ -68,7 +68,6 @@ Role description containing some reStructuredText expressions.
 
 
 class MockContents:
-
     FILE = "file"
     DIR = "dir"
 
@@ -78,7 +77,6 @@ class MockContents:
 
 
 class MockGitHubRepository(GitHubRepository):
-
     # TODO (felix): Improve the mocked repository class and allow mocking
     # single repositories for certain test cases. Currently, all test repos
     # are defined in this class definition.

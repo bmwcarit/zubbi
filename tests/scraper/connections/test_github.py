@@ -38,7 +38,6 @@ def test_get_app_auth_headers():
 
 
 def test_get_installation_key(mock_github_api_endpoints):
-
     mock_github_api_endpoints(GITHUB_URL)
     # Initialize GitHubConnection
     gh_con = GitHubConnection(**GITHUB_CON_CONFIG)

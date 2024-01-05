@@ -29,7 +29,6 @@ LOGGER = logging.getLogger(__name__)
 
 class GitHubConnection:
     def __init__(self, url, app_id, app_key):
-
         self.base_url = url
         self.api_url = urljoin(url, "api/v3")
         self.graphql_url = urljoin(url, "api/graphql")

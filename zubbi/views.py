@@ -80,7 +80,6 @@ class ZubbiMethodView(MethodView):
 
 
 class IndexView(ZubbiMethodView):
-
     endpoint = "index"
     rule = "/"
     template_name = "index.html"
@@ -91,7 +90,6 @@ class IndexView(ZubbiMethodView):
 
 
 class SearchView(ZubbiMethodView):
-
     endpoint = "search"
     rule = "/search"
     template_name = "search.html"
@@ -190,7 +188,6 @@ class SearchView(ZubbiMethodView):
 
 
 class DetailView(ZubbiMethodView):
-
     endpoint = "details"
     rule = "/detail/<path:repo>/<block_type>/<name>"
     template_name = "details.html"
@@ -215,7 +212,6 @@ class DetailView(ZubbiMethodView):
 
 
 class HowToView(ZubbiMethodView):
-
     endpoint = "how-to"
     rule = "/how-to"
     template_name = "how-to.html"
@@ -226,7 +222,6 @@ class HowToView(ZubbiMethodView):
 
 
 class AutoCompleteView(ZubbiMethodView):
-
     endpoint = "auto-complete"
     rule = "/api/search/autocomplete"
     template_name = None
@@ -261,7 +256,6 @@ class AutoCompleteView(ZubbiMethodView):
 
 
 class WebhookView(ZubbiMethodView):
-
     endpoint = "webhook"
     rule = "/api/webhook"
     template_name = None
@@ -320,7 +314,6 @@ class WebhookView(ZubbiMethodView):
 
 
 class LmzifyView(IndexView):
-
     endpoint = "lmzify"
     rule = "/lmzify"
     template_name = "lmzify.html"
