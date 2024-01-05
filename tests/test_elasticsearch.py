@@ -196,7 +196,7 @@ def test_elasticsearch_write(elmock):
     zt.save()
 
     assert elmock.return_value.index.call_args == mock.call(
-        index="zuul-tenants", body=zt.to_dict()
+        index="zuul-tenants", document=zt.to_dict()
     )
 
 
@@ -207,5 +207,5 @@ def test_elasticsearch_write_with_prefix(elmock):
     zt.save()
 
     assert elmock.return_value.index.call_args == mock.call(
-        index="zubbi-zuul-tenants", body=zt.to_dict()
+        index="zubbi-zuul-tenants", document=zt.to_dict()
     )
