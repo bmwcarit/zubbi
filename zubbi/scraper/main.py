@@ -558,7 +558,7 @@ def _scrape_repo_map(
 def scrape_repo(repo, tenants, reusable_repos, scrape_time):
     job_files, role_files = Scraper(
         repo,
-        tenants.get("extra-config-paths", {}),
+        tenants.get("extra_config_paths", {}),
     ).scrape()
 
     is_reusable_repo = repo.repo_name in reusable_repos
