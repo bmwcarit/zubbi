@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.6.2
+
+### Fixes
+- Fixed a bug in the tenant parser preventing the `extra-config-paths` feature
+  to work correctly.
+
 ## 2.6.1
 
 ### Fixes
