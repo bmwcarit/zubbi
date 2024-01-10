@@ -47,6 +47,7 @@ def test_parse(repo_data):
     job_5 = jobs[4]
     role_1 = [r for r in roles if r["role_name"] == "foo"][0]
     role_2 = [r for r in roles if r["role_name"] == "bar"][0]
+    role_3 = [r for r in roles if r["role_name"] == "foobar/baz"][0]
 
     expected_job_1 = {
         "job_name": "my-cool-new-job",
@@ -215,6 +216,39 @@ def test_parse(repo_data):
         "last_updated": "2018-09-17 15:15:15",
     }
 
+    expected_role_3 = {
+        "role_name": "foobar/baz",
+        "repo": "my/project",
+        "tenants": ["foo", "bar"],
+        "description": (
+            "Yet another simple description\n\n"
+            "**Role variables**\n\n"
+            ".. zuul:rolevar:: my_mandatory_variable\n\n"
+            "   This variable is mandatory.\n"
+        ),
+        "description_html": (
+            "<p>Yet another simple description</p>\n"
+            "<p><strong>Role variables</strong></p>\n"
+            '<dl class="zuul rolevar">\n'
+            '<dt class="sig sig-object zuul" id="rolevar-my_mandatory_variable">\n'
+            '<span class="sig-name descname">'
+            '<span class="pre">my_mandatory_variable</span>'
+            "</span>"
+            '<a class="headerlink" href="#rolevar-my_mandatory_variable" '
+            'title="Link to this definition">'
+            "¶</a><br /></dt>\n"
+            "<dd><p>This variable is mandatory.</p>\n"
+            "</dd></dl>\n"
+            "\n"
+        ),
+        "url": "https://github/my/project/tree/master/roles/foobar/baz",
+        "private": False,
+        "platforms": [],
+        "reusable": False,
+        "scrape_time": scrape_time,
+        "last_updated": "2018-09-17 15:15:15",
+    }
+
     # NOTE (fschmidt): Without the skip_empty flag, empty (= None) keys will
     # be stripped from the resulting dict.
     assert job_1.to_dict(skip_empty=False) == expected_job_1
@@ -224,6 +258,7 @@ def test_parse(repo_data):
     assert job_5.to_dict(skip_empty=False) == expected_job_5
     assert role_1.to_dict(skip_empty=False) == expected_role_1
     assert role_2.to_dict(skip_empty=False) == expected_role_2
+    assert role_3.to_dict(skip_empty=False) == expected_role_3
 
 
 def test_parse_reusable_repo(repo_data):

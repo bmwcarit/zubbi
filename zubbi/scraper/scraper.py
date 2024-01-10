@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+from pathlib import Path
 
 from zubbi.scraper.exceptions import CheckoutError
 
@@ -28,6 +29,19 @@ README_FILES = ["README.rst", "README.md", "README.txt", "README"]
 CHANGELOG_FILES = ["CHANGELOG.rst", "CHANGELOG.md", "CHANGELOG.txt", "CHANGELOG"]
 
 ROLES_DIRECTORY = "roles"
+
+# Role needs to contains at least one of those directories to be considered as role
+# https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_reuse_roles.html#role-directory-structure
+ROLE_MANDATORY_DIRS = [
+    "tasks",
+    "handlers",
+    "library",
+    "defaults",
+    "vars",
+    "files",
+    "templates",
+    "meta",
+]
 
 REPO_ROOT = "/"
 
@@ -146,29 +160,44 @@ class Scraper:
 
     def scrape_role_files(self):
         role_files = {}
-        # We are only interested in the role name (=> directory name)
-        # and the README and CHANGELOG files. Thus, we don't need to
-        # iterate recursively over the roles directory as those files
-        # should be on the top-level per role.
+        # Roles might be grouped in some parent directory, so we need to
+        # recursively check nested directories.
+
+        # Listing repository files is based on the example in pyGithub doc:
+        # https://pygithub.readthedocs.io/en/v2.1.1/examples/Repository.html#get-all-of-the-contents-of-the-repository-recursively
         try:
-            roles = self.repo.directory_contents(ROLES_DIRECTORY)
-            for role_name, remote_file in roles.items():
+            # Ansible requires roles to be defined in a certain directory structure.
+            # Thus, we are only interested in directories
+            dirs_to_search = [
+                item
+                for item in self.repo.directory_contents(ROLES_DIRECTORY).values()
+                if item.type == "dir"
+            ]
+            while dirs_to_search:
                 try:
-                    if remote_file.type != "dir":
-                        # Ansible requires the role to be defined in a
-                        # certain directory structure. Thus, we can
-                        # ignore it in case it's not a directory.
+                    dir = dirs_to_search.pop(0)
+                    dir_items = self.repo.directory_contents(dir.path)
+
+                    subdirs = [
+                        item for item in dir_items.values() if item.type == "dir"
+                    ]
+                    # When directory does not contain one of role mandatory directories
+                    # it is not a role and its subdirectories (if any) should be further
+                    # scanned.
+                    # This is done by appending those subdirectories to 'dirs_to_search'
+                    # search list (this implements the recursive search)
+                    if set([d.name for d in subdirs]).isdisjoint(ROLE_MANDATORY_DIRS):
+                        dirs_to_search.extend(subdirs)
                         continue
-                    last_changed = self.repo.last_changed(remote_file.path)
-                    existing_files = self.repo.directory_contents(remote_file.path)
-                    # Skip empty directories or files
-                    if not existing_files:
-                        continue
-                    readme_file = self.find_matching_file(README_FILES, existing_files)
-                    changelog_file = self.find_matching_file(
-                        CHANGELOG_FILES, existing_files
-                    )
-                    role_files[role_name] = {
+
+                    # Once the role is found, we are only interested in the timestamp of
+                    # the latest update (the last git change), README and CHANGELOG files
+                    # Those files should be on the top-level per role.
+                    last_changed = self.repo.last_changed(dir.path)
+                    readme_file = self.find_matching_file(README_FILES, dir_items)
+                    changelog_file = self.find_matching_file(CHANGELOG_FILES, dir_items)
+                    # role name is the directory path relative to ROLES_DIRECTORY
+                    role_files[str(Path(dir.path).relative_to(ROLES_DIRECTORY))] = {
                         "last_changed": last_changed,
                         "readme_file": readme_file,
                         "changelog_file": changelog_file,
@@ -178,7 +207,8 @@ class Scraper:
         except CheckoutError as e:
             LOGGER.debug(e)
 
-        return role_files
+        # sort keys (role names) alphabetically
+        return {key: value for key, value in sorted(role_files.items())}
 
     def find_matching_file(self, file_filter, existing_files):
         for filename, file_content in existing_files.items():
