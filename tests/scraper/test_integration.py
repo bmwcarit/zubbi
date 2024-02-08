@@ -72,6 +72,7 @@ class MockContents:
     DIR = "dir"
 
     def __init__(self, path, type):
+        self.name = path.split("/")[-1]
         self.path = path
         self.type = type
 
@@ -99,9 +100,10 @@ class MockGitHubRepository(GitHubRepository):
             "zuul.d/jobs.yaml": MOCKED_JOB_CONTENT,
             "roles": {"docker-run": MockContents("roles/docker-run", MockContents.DIR)},
             "roles/docker-run": {
+                "tasks": MockContents("roles/docker-run/tasks", MockContents.DIR),
                 "README.rst": MockContents(
                     "roles/docker-run/README.rst", MockContents.FILE
-                )
+                ),
             },
             "roles/docker-run/README.rst": MOCKED_ROLE_DESCRIPTION,
             "roles/ignored": MockContents("not a valid role", MockContents.FILE),
@@ -115,25 +117,40 @@ class MockGitHubRepository(GitHubRepository):
                 "bar": MockContents("roles/bar", MockContents.DIR),
                 "foobar": MockContents("roles/foobar", MockContents.DIR),
                 "empty-dir": MockContents("roles/empty-dir", MockContents.DIR),
+                "foobaz": MockContents("roles/foobaz", MockContents.DIR),
             },
             "roles/foo": {
-                "README.md": MockContents("roles/foo/README.md", MockContents.FILE)
+                "defaults": MockContents("roles/foo/defaults", MockContents.DIR),
+                "README.md": MockContents("roles/foo/README.md", MockContents.FILE),
             },
             "roles/bar": {
-                "README.txt": MockContents("roles/bar/README.txt", MockContents.FILE)
+                "library": MockContents("roles/bar/library", MockContents.DIR),
+                "README.txt": MockContents("roles/bar/README.txt", MockContents.FILE),
             },
             "roles/foobar": {
-                "README": MockContents("roles/foobar/README", MockContents.FILE)
+                "handlers": MockContents("roles/foobar/handlers", MockContents.DIR),
+                "README": MockContents("roles/foobar/README", MockContents.FILE),
             },
             "roles/empty-dir": {
+                "meta": MockContents("roles/empty-dir/meta", MockContents.DIR),
                 "README.whatever": MockContents(
                     "roles/empty-dir/README.whatever", MockContents.FILE
-                )
+                ),
+            },
+            "roles/foobaz": {
+                "baz": MockContents("roles/foobaz/baz", MockContents.DIR),
+            },
+            "roles/foobaz/baz": {
+                "vars": MockContents("roles/foobaz/baz/vars", MockContents.DIR),
+                "README.rst": MockContents(
+                    "roles/foobaz/baz/README.rst", MockContents.FILE
+                ),
             },
             "roles/foo/README.md": "# Just some Markdown",
             "roles/bar/README.txt": "Just some simple text\nwith a line break",
             "roles/foobar/README": "Simple text in a file without extension",
-            "roles/empty-dir/REAMDE.whatever": "This file won't be checked out",
+            "roles/empty-dir/README.whatever": "This file won't be checked out",
+            "roles/foobaz/baz/README.rst": "Simple readme file from nested role",
         },
         "orga1/repo3": {
             REPO_ROOT: {
@@ -213,19 +230,24 @@ def test_scrape():
         "orga1/repo2": (
             {},
             {
-                "foo": {
-                    "last_changed": "2018-09-17 15:15:15",
-                    "readme_file": {
-                        "path": "roles/foo/README.md",
-                        "content": "# Just some Markdown",
-                    },
-                    "changelog_file": None,
-                },
                 "bar": {
                     "last_changed": "2018-09-17 15:15:15",
                     "readme_file": {
                         "path": "roles/bar/README.txt",
                         "content": "Just some simple text\nwith a line break",
+                    },
+                    "changelog_file": None,
+                },
+                "empty-dir": {
+                    "last_changed": "2018-09-17 15:15:15",
+                    "readme_file": None,
+                    "changelog_file": None,
+                },
+                "foo": {
+                    "last_changed": "2018-09-17 15:15:15",
+                    "readme_file": {
+                        "path": "roles/foo/README.md",
+                        "content": "# Just some Markdown",
                     },
                     "changelog_file": None,
                 },
@@ -237,9 +259,12 @@ def test_scrape():
                     },
                     "changelog_file": None,
                 },
-                "empty-dir": {
+                "foobaz/baz": {
                     "last_changed": "2018-09-17 15:15:15",
-                    "readme_file": None,
+                    "readme_file": {
+                        "path": "roles/foobaz/baz/README.rst",
+                        "content": "Simple readme file from nested role",
+                    },
                     "changelog_file": None,
                 },
             },

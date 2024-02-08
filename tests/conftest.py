@@ -118,6 +118,14 @@ def repo_data():
             },
             "changelog_file": None,
         },
+        "foobar/baz": {
+            "last_changed": "2018-09-17 15:15:15",
+            "readme_file": {
+                "path": "roles/foobar/baz/README.rst",
+                "content": raw_file("repo_files/roles/foobar/baz/README.rst"),
+            },
+            "changelog_file": None,
+        },
     }
 
     return repo, tenants, job_files, role_files
