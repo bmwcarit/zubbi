@@ -17,6 +17,7 @@ import hashlib
 import hmac
 import json
 import math
+import urllib.parse
 
 from elasticsearch_dsl import Q
 from flask import (
@@ -159,7 +160,7 @@ class SearchView(ZubbiMethodView):
                     "zubbi.details",
                     repo=block.repo,
                     block_type=block_type(block),
-                    name=block.name,
+                    name=urllib.parse.quote_plus(block.name),
                 ),
                 code=303,
             )
@@ -199,6 +200,7 @@ class DetailView(ZubbiMethodView):
             abort(400, "Unknown block type '{}'".format(block_type))
 
         extra_filter = Q("term", private=False)
+        name = urllib.parse.unquote_plus(name)
         search = BlockSearch(block_class=BlockClass).detail_query(
             name, repo, extra_filter
         )

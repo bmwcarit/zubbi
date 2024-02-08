@@ -15,6 +15,7 @@
 import collections
 import logging
 import ssl
+from urllib.parse import quote_plus
 
 import markupsafe
 from elasticsearch.exceptions import ElasticsearchException
@@ -270,8 +271,9 @@ class BlockSearch(Search):
 
     def detail_query(self, block_name, repo, extra_filter=None):
         extra_filter = extra_filter or []
+        query_string = block_name.translate(TRANSLATION_TABLE)
         detail_query = [
-            Q("query_string", query=block_name, fields=["job_name", "role_name"]),
+            Q("query_string", query=query_string, fields=["job_name", "role_name"]),
             Q("match", repo=repo),
         ]
         return self.query("bool", filter=extra_filter, must=detail_query)
@@ -336,6 +338,9 @@ def init_elasticsearch(app):
     app.add_template_test(role_type)
     app.add_template_test(job_type)
     app.add_template_filter(block_type)
+    # Jinja2 doesn't provide it's own filter equivalent for
+    # urllib.parse.quote_plus, so we add it by ourselves.
+    app.add_template_filter(quote_plus)
 
 
 def init_elasticsearch_con(
