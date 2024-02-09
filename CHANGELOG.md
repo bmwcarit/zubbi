@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.7.0
+
+### New Features
+- Zubbi now searches the `roles` directory recursively for roles defined in a
+  subdirectory.
+
 ## 2.6.2
 
 ### Fixes
