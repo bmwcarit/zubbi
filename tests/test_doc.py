@@ -46,7 +46,8 @@ def test_render_sphinx_python_code(readme_python_code):
     expected_code = (
         '<div class="highlight-python notranslate">'
         '<div class="highlight"><pre><span></span>'
-        '<span class="kn">import</span> <span class="nn">'
+        '<span class="kn">import</span><span class="w"> </span>'
+        '<span class="nn">'
         "this</span>\n</pre></div>\n</div>\n"
     )
 

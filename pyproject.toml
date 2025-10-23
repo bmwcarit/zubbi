@@ -1,3 +1,89 @@
+[project]
+name = "zubbi"
+description = "Index for finding jobs & roles used in a Zuul based CI system"
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICEN[CS]E.*"]
+dependencies = [
+  "arrow",
+  "click",
+  "elasticsearch<8.0.0",
+  "elasticsearch-dsl>=7.0.0,<8.0.0",
+  "pyyaml",
+  "pyjwt",
+  "pyzmq",
+  "cachelib",
+  "cryptography",
+  "requests",
+  "flask",
+  "github3.py",
+  "zuul-sphinx",
+  "sphinx",
+  "jinja2",
+  "readme_renderer[md]",
+  "tabulate",
+  "gitpython",
+  "markupsafe",
+]
+authors = [
+  { name = "Felix Edel", email = "felix.edel@bmw.de" },
+  { name = "Simon Westphahl", email = "simon.westphahl@bmw.de" },
+  { name = "Benedikt Loeffler", email = "benedikt.loeffler@bmw.de" },
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Framework :: Flask",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: POSIX",
+  "Programming Language :: Python :: 3 :: Only",
+]
+requires-python = ">= 3.10"
+# Don't hardcode a version here, but use the one from git via hatchling
+dynamic = ["version"]
+
+[project.urls]
+repository = "https://github.com/bmwcarit/zubbi"
+Changelog = "https://github.com/bmwcarit/zubbi/blob/master/CHANGELOG.md"
+
+[project.scripts]
+zubbi-scraper = "zubbi.scraper.main:main"
+collectstatic = "zubbi.cli:collectstatic"
+
+# Using hatchling as build-system allows us to use dynamic versioning
+# based on git tags, which is not yet supported by uv.
+# For more details, see: https://github.com/astral-sh/uv/issues/8714.
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+  "flake8",
+  "flake8-docstrings",
+  "flake8-import-order",
+  "pytest",
+  "pytest-cov",
+  "requests-mock",
+  "freezegun",
+  "pre-commit",
+]
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.hatch.build.targets.sdist]
+# By default hatchling will include all files that are not ignored via a
+# .gitignore file. However, we want to be more restrictive to avoid
+# including local or temporary files in the source distribution when
+# built locally, so we only include relevant files. This is more
+# restrictive than the previous solution using setuptools and a
+# MANIFEST.in file.
+# TODO (felix): Any other files to add here?
+include = ["zubbi", "tests", "LICENSE", "tox.ini", "/*.md", "*.example"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["zubbi"]
+
 [tool.black]
 exclude = '''
 /(
