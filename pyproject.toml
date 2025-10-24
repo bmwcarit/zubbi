@@ -101,3 +101,6 @@ exclude = '''
   | \.eggs
 )/
 '''
+
+[tool.pytest.ini_options]
+addopts = "--cov=zubbi --cov-report=term --cov-report=html --cov-report=xml --verbose"
