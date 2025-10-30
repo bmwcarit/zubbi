@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### General
+- Switched build framework from `pipenv` to `uv`
+- Replaced `flake8` and `black` with `ruff`
+- Updated unpinned dependencies to newest versions
+- Raise minimum required python version to `3.10`
+
 ## 2.7.0
 
 ### New Features
