@@ -20,7 +20,6 @@ import yaml
 
 from zubbi.scraper.exceptions import CheckoutError, ScraperConfigurationError
 
-
 TENANTS_DIRECTORY = "tenants"
 
 LOGGER = logging.getLogger(__name__)

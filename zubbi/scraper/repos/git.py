@@ -21,7 +21,6 @@ from git.exc import GitCommandError, InvalidGitRepositoryError
 from zubbi.scraper.exceptions import CheckoutError
 from zubbi.scraper.repos import Repository
 
-
 LOGGER = logging.getLogger(__name__)
 
 # TODO Currently, there is no way to specify a different default branch for a "generic" git repository.

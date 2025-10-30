@@ -21,7 +21,6 @@ from zubbi.scraper.exceptions import CheckoutError
 from zubbi.scraper.repos import Repository
 from zubbi.utils import urljoin
 
-
 LOGGER = logging.getLogger(__name__)
 
 GRAPHQL_BLAME_QUERY = """

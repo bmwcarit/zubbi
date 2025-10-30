@@ -58,14 +58,12 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-  "flake8",
-  "flake8-docstrings",
-  "flake8-import-order",
   "pytest",
   "pytest-cov",
   "requests-mock",
   "freezegun",
   "pre-commit",
+  "ruff",
 ]
 
 [tool.hatch.version]
@@ -83,24 +81,6 @@ include = ["zubbi", "tests", "LICENSE", "tox.ini", "/*.md", "*.example"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["zubbi"]
-
-[tool.black]
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-
-  # zubbi custom exclude
-  | \.eggs
-)/
-'''
 
 [tool.pytest.ini_options]
 addopts = "--cov=zubbi --cov-report=term --cov-report=html --cov-report=xml --verbose"

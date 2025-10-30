@@ -34,7 +34,7 @@ from flask.views import MethodView
 
 from .extensions import get_zmq_socket
 from .helpers import calculate_pagination
-from .models import block_type, BlockSearch, class_from_block_type
+from .models import BlockSearch, block_type, class_from_block_type
 from .utils import get_version
 
 SEARCHABLE_FIELDS = frozenset(["name", "description", "tenants", "repo"])

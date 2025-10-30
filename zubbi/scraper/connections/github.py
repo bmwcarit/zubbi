@@ -21,7 +21,6 @@ import requests
 
 from zubbi.utils import urljoin
 
-
 PREVIEW_JSON_ACCEPT = "application/vnd.github.machine-man-preview+json"
 
 LOGGER = logging.getLogger(__name__)

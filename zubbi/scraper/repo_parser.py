@@ -21,10 +21,9 @@ from yaml.constructor import Constructor
 from yaml.parser import ParserError
 from yaml.scanner import ScannerError
 
-from zubbi.doc import render_file, render_sphinx, SphinxBuildError
+from zubbi.doc import SphinxBuildError, render_file, render_sphinx
 from zubbi.models import AnsibleRole, ZuulJob
 from zubbi.utils import last_changed_from_blame_range
-
 
 LOGGER = logging.getLogger(__name__)
 

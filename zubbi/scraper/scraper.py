@@ -17,7 +17,6 @@ from pathlib import Path
 
 from zubbi.scraper.exceptions import CheckoutError
 
-
 LOGGER = logging.getLogger(__name__)
 
 ZUUL_DIRECTORIES = ["zuul.d", ".zuul.d"]

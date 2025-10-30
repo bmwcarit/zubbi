@@ -16,7 +16,6 @@ from datetime import datetime
 
 from zubbi.scraper.connections.github import GitHubConnection
 
-
 GITHUB_URL = "https://github.example.com"
 
 GITHUB_CON_CONFIG = {

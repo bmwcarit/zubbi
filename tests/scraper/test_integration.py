@@ -19,7 +19,6 @@ from zubbi.scraper.repos.github import GitHubRepository
 from zubbi.scraper.scraper import REPO_ROOT, Scraper
 from zubbi.scraper.tenant_parser import TenantParser
 
-
 MOCKED_JOB_CONTENT = """
 - job:
     name: my-cool-new-job

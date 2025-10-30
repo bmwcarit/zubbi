@@ -8,9 +8,9 @@ from elasticsearch_dsl.serializer import serializer
 from zubbi.models import (
     AnsibleRole,
     GitRepo,
-    init_elasticsearch_con,
     ZuulJob,
     ZuulTenant,
+    init_elasticsearch_con,
 )
 
 

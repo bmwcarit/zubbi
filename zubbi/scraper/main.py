@@ -28,15 +28,14 @@ from elasticsearch_dsl import Q
 from flask.config import Config
 from tabulate import tabulate
 
-from zubbi import default_settings
-from zubbi import ZUBBI_SETTINGS_ENV
+from zubbi import ZUBBI_SETTINGS_ENV, default_settings
 from zubbi.models import (
     AnsibleRole,
-    get_elasticsearch_parameters_from_config,
     GitRepo,
-    init_elasticsearch_con,
     ZuulJob,
     ZuulTenant,
+    get_elasticsearch_parameters_from_config,
+    init_elasticsearch_con,
 )
 from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.git import GitConnection
@@ -48,7 +47,6 @@ from zubbi.scraper.repos.git import GitRepository
 from zubbi.scraper.repos.github import GitHubRepository
 from zubbi.scraper.scraper import Scraper
 from zubbi.scraper.tenant_parser import TenantParser
-
 
 LOGGER = logging.getLogger(__name__)
 

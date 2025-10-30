@@ -8,8 +8,10 @@ help:
 	@echo '    make dist    Build python sdist and wheel using uv'
 
 lint:
-	uv run --frozen flake8
-	uv run --frozen black --check --diff .
+	uv run --frozen ruff check
+# By default ruff does not format imports, so we have to call this explicitly
+	uv run --frozen ruff check --select I
+	uv run --frozen ruff format --check --diff .
 
 test:
 	uv run --frozen pytest

@@ -1,6 +1,11 @@
 repos:
-  - repo: https://github.com/ambv/black
-    rev: 22.10.0
-    hooks:
-      - id: black
-        language_version: python3
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.14.2
+  hooks:
+    # Run the linter
+    - id: ruff-check
+    # Sort import statements
+    - id: ruff-check
+      args: ["--select", "I", "--fix"]
+    # Run the formatter
+    - id: ruff-format

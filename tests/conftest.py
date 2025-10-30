@@ -24,7 +24,6 @@ import zubbi
 from zubbi.scraper.repos import Repository
 from zubbi.utils import urljoin
 
-
 FIXTURE_DIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "testdata")
 
 
