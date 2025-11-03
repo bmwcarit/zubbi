@@ -15,10 +15,7 @@ lint:
 
 test:
 	uv run --frozen pytest
-# TODO (felix): This command is currently failing as flask tries to connect to
-# ES. I assume that this wasn't the case before as the command (resp. the old
-# tox test env) was working before. Maybe flask is missing some config here?
-# flask collectstatic --help
+	uv run --frozen flask collectstatic --help
 
 dist:
 	uv build

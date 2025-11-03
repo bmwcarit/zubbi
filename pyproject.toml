@@ -47,6 +47,8 @@ Changelog = "https://github.com/bmwcarit/zubbi/blob/master/CHANGELOG.md"
 
 [project.scripts]
 zubbi-scraper = "zubbi.scraper.main:main"
+
+[project.entry-points."flask.commands"]
 collectstatic = "zubbi.cli:collectstatic"
 
 # Using hatchling as build-system allows us to use dynamic versioning
