@@ -19,7 +19,7 @@ import json
 import math
 import urllib.parse
 
-from elasticsearch_dsl import Q
+from elasticsearch.dsl import Q
 from flask import (
     abort,
     current_app,

@@ -1,12 +1,8 @@
 # global configuration
 ELASTICSEARCH = {
-    'host': '<elasticsearch_host>',
-    'port': 9200,  # default
+    'host': 'http(s)://<elasticsearch_host>:<port>',
     'user': '<user>',
     'password': '<password>',
-    # Optional, to avoid name clashes with existing ES indices from other applications
-    # E.g. 'zubbi' will result in indices like 'zubbi-zuul-jobs', 'zubbi-ansible-roles', ...
-    index_prefix: '<prefix>',
     # Optional, to enable SSL for the Elasticsearch connection.
     # You must at least set 'enabled' to True and provide other parameters if the default
     # values are not sufficient.

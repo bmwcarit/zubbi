@@ -1,87 +1,108 @@
+import contextlib
+import importlib
+import os
 import ssl
 from unittest import mock
 
-import elasticsearch_dsl
+import elasticsearch
 import pytest
-from elasticsearch_dsl.serializer import serializer
 
+import zubbi.models
 from zubbi.models import (
-    AnsibleRole,
-    GitRepo,
-    ZuulJob,
-    ZuulTenant,
+    ZUBBI_INDEX_PREFIX_ENV,
     init_elasticsearch_con,
+    init_elasticsearch_documents,
 )
 
+ES_HOST = "http://127.0.0.1:9200"
+ES_HOST_SSL = "https://127.0.0.1:443"
 
-@pytest.fixture(scope="function")
-def elmock():
-    with mock.patch.object(elasticsearch_dsl.connections, "Elasticsearch") as _elmock:
+
+@pytest.fixture()
+def mock_index_prefix():
+    # Using a ctx manager allows us to pass different prefix values in each
+    # test case.
+    @contextlib.contextmanager
+    def _index_prefix(prefix):
+        # Keep the original prefix, so we can restore it later on
+        original_prefix = os.environ.get(ZUBBI_INDEX_PREFIX_ENV)
+        os.environ[ZUBBI_INDEX_PREFIX_ENV] = prefix
+        # As the index prefix envvar is used in the class definition of our
+        # module classes, we have to reload the imports after the envvar is
+        # set. Otherwise, setting the envvar has no effect as the classes
+        # were already created without index prefix.
+        # NOTE (felix): This won't have any effect on objects imported via
+        # from ... import ... statements as the object definition will not
+        # be redefined if it's already imported. If a specific object is
+        # required, either use the full-qualified object name or import
+        # the object within the context manager.
+        importlib.reload(zubbi.models)
+
+        yield
+
+        # Cleanup: Delete the envvar (or restore the original value) and
+        # reload the import, so that subsequent tests can work without
+        # the index prefix.
+        if original_prefix is not None:
+            os.environ[ZUBBI_INDEX_PREFIX_ENV] = original_prefix
+        else:
+            del os.environ[ZUBBI_INDEX_PREFIX_ENV]
+        importlib.reload(zubbi.models)
+
+    return _index_prefix
+
+
+class DummyElasticsearch(elasticsearch.Elasticsearch):
+    # We use this dummy ES client to evaluate that the connection
+    # parameters (args, kwargs) are passed correctly to the underlying ES
+    # connection.
+    def __init__(self, *args, hosts, **kwargs):
+        self.hosts = hosts
+        self.args = args
+        self.kwargs = kwargs
+
+
+@pytest.fixture()
+def dummy_es_con():
+    dummy_es = elasticsearch.dsl.connections.Connections[DummyElasticsearch](
+        elasticsearch_class=DummyElasticsearch
+    )
+
+    with mock.patch("zubbi.models.connections", dummy_es) as _elmock:
         yield _elmock
 
-    # Reset the name of each index to its original value as it might have changed
-    # during the tests. Btw, this clearly shows that this is a hack ;-)
-    for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
-        # As the Index.name attribute holds the constant value from the original
-        # definition, we can use it to reset the active value which might have
-        # changed due to the index_prefix hack.
-        idx_cls._index._name = idx_cls.Index.name
 
-
-def test_elasticsearch_init_ssl_defaults(elmock):
+def test_elasticsearch_init_ssl_defaults(dummy_es_con):
     tls_config = {"enabled": True}
-    init_elasticsearch_con("127.0.0.1", "user", "password", 443, tls=tls_config)
+    init_elasticsearch_con(ES_HOST_SSL, "user", "password", tls=tls_config)
 
+    default = dummy_es_con.get_connection()
     # Use single assertion for each argument as we can't compare the ssl_context so easily
-    kwargs = elmock.call_args[1]
-    assert kwargs["port"] == 443
-    assert kwargs["use_ssl"] is True
-    assert kwargs["ssl_context"].check_hostname is True
-    assert kwargs["ssl_context"].verify_mode == ssl.CERT_REQUIRED
+    assert default.hosts == ES_HOST_SSL
+    assert default.kwargs["basic_auth"] == ("user", "password")
+    assert default.kwargs["ssl_context"].check_hostname is True
+    assert default.kwargs["ssl_context"].verify_mode == ssl.CERT_REQUIRED
 
 
-def test_elasticsearch_init_ssl(elmock):
+def test_elasticsearch_init_ssl(dummy_es_con):
     tls_config = {"enabled": True, "check_hostname": False, "verify_mode": "CERT_NONE"}
-    init_elasticsearch_con("127.0.0.1", "user", "password", 443, tls=tls_config)
+    init_elasticsearch_con(ES_HOST_SSL, "user", "password", tls=tls_config)
 
-    kwargs = elmock.call_args[1]
-    assert kwargs["port"] == 443
-    assert kwargs["use_ssl"] is True
-    assert kwargs["ssl_context"].check_hostname is False
-    assert kwargs["ssl_context"].verify_mode == ssl.CERT_NONE
+    default = dummy_es_con.get_connection()
+    assert default.hosts == ES_HOST_SSL
+    assert default.kwargs["basic_auth"] == ("user", "password")
+    assert default.kwargs["ssl_context"].check_hostname is False
+    assert default.kwargs["ssl_context"].verify_mode == ssl.CERT_NONE
 
 
+@mock.patch("elasticsearch.Elasticsearch")
 def test_elasticsearch_init(elmock):
-    # Define the existing indices for the mock
     existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
     elmock.return_value.indices.exists.side_effect = (
         lambda index: index in existing_indices
     )
 
-    init_elasticsearch_con(
-        "127.0.0.1",
-        "user",
-        "password",
-        connection_params={
-            "timeout": 30,
-            "max_retries": 3,
-            "retry_on_timeout": True,
-        },
-    )
-
-    # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
-    # was called with the correct arguments.
-    assert elmock.call_args == mock.call(
-        host="127.0.0.1",
-        port=9200,
-        http_auth=("user", "password"),
-        use_ssl=False,
-        ssl_context=None,
-        timeout=30,
-        max_retries=3,
-        retry_on_timeout=True,
-        serializer=serializer,
-    )
+    init_elasticsearch_documents(using=elmock())
 
     # Validate that all necessary indices were checked for existence
     checked_indices = {
@@ -101,111 +122,129 @@ def test_elasticsearch_init(elmock):
     assert {"zuul-tenants", "git-repos"} == created_indices
 
 
-def test_elasticsearch_init_with_prefix(elmock):
-    # Define the existing indices for the mock
-    existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
-    elmock.return_value.indices.exists.side_effect = (
-        lambda index: index in existing_indices
-    )
+@mock.patch("elasticsearch.Elasticsearch")
+def test_elasticsearch_init_with_prefix(elmock, mock_index_prefix):
+    index_prefix = "zubbi"
+    with mock_index_prefix(index_prefix):
+        existing_indices = {
+            f"{index_prefix}-zuul-jobs",
+            f"{index_prefix}-ansible-roles",
+            "unknown-index",
+        }
+        elmock.return_value.indices.exists.side_effect = (
+            lambda index: index in existing_indices
+        )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
+        init_elasticsearch_documents(using=elmock())
 
-    # Validate that the Elasticsearch() (which is called by elasticsearch-dsl in the end)
-    # was called with the correct arguments.
-    assert elmock.call_args == mock.call(
-        host="127.0.0.1",
-        port=9200,
-        http_auth=("user", "password"),
-        use_ssl=False,
-        ssl_context=None,
-        serializer=serializer,
-    )
+        # Validate that all necessary indices were checked for existence
+        checked_indices = {
+            call[1]["index"]
+            for call in elmock.return_value.indices.exists.call_args_list
+        }
+        assert {
+            f"{index_prefix}-zuul-jobs",
+            f"{index_prefix}-ansible-roles",
+            f"{index_prefix}-zuul-tenants",
+            f"{index_prefix}-git-repos",
+        } == checked_indices
 
-    # Validate that all necessary indices were checked for existence
-    checked_indices = {
-        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
-    }
-    assert {
-        "zubbi-zuul-jobs",
-        "zubbi-ansible-roles",
-        "zubbi-zuul-tenants",
-        "zubbi-git-repos",
-    } == checked_indices
-
-    # Validate that only the missing indices were created
-    created_indices = {
-        call[1]["index"] for call in elmock.return_value.indices.create.call_args_list
-    }
-    assert {"zubbi-zuul-tenants", "zubbi-git-repos"} == created_indices
-
-
-def test_elasticsearch_init_with_empty_prefix(elmock):
-    # Define the existing indices for the mock
-    existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
-    elmock.return_value.indices.exists.side_effect = (
-        lambda index: index in existing_indices
-    )
-
-    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="")
-
-    # Validate that all necessary indices were checked for existence
-    checked_indices = {
-        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
-    }
-    assert {
-        "zuul-jobs",
-        "ansible-roles",
-        "zuul-tenants",
-        "git-repos",
-    } == checked_indices
-
-    # Validate that only the missing indices were created
-    created_indices = {
-        call[1]["index"] for call in elmock.return_value.indices.create.call_args_list
-    }
-    assert {"zuul-tenants", "git-repos"} == created_indices
+        # Validate that only the missing indices were created
+        created_indices = {
+            call[1]["index"]
+            for call in elmock.return_value.indices.create.call_args_list
+        }
+        assert {
+            f"{index_prefix}-zuul-tenants",
+            f"{index_prefix}-git-repos",
+        } == created_indices
 
 
-def test_elasticsearch_init_with_prefix_multi(elmock):
-    # Define the existing indices for the mock
-    existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
-    elmock.return_value.indices.exists.side_effect = (
-        lambda index: index in existing_indices
-    )
+@mock.patch("elasticsearch.Elasticsearch")
+def test_elasticsearch_init_with_empty_prefix(elmock, mock_index_prefix):
+    with mock_index_prefix(""):
+        # Define the existing indices for the mock
+        existing_indices = {"zuul-jobs", "ansible-roles", "unknown-index"}
+        elmock.return_value.indices.exists.side_effect = (
+            lambda index: index in existing_indices
+        )
 
-    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
-    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
+        init_elasticsearch_documents(using=elmock())
 
-    # Evenv if we called the init() method multiple times, the index should only be
-    # prepended once.
-    checked_indices = {
-        call[1]["index"] for call in elmock.return_value.indices.exists.call_args_list
-    }
-    assert {
-        "zubbi-zuul-jobs",
-        "zubbi-ansible-roles",
-        "zubbi-zuul-tenants",
-        "zubbi-git-repos",
-    } == checked_indices
+        # Validate that all necessary indices were checked for existence
+        checked_indices = {
+            call[1]["index"]
+            for call in elmock.return_value.indices.exists.call_args_list
+        }
+        assert {
+            "zuul-jobs",
+            "ansible-roles",
+            "zuul-tenants",
+            "git-repos",
+        } == checked_indices
+
+        # Validate that only the missing indices were created
+        created_indices = {
+            call[1]["index"]
+            for call in elmock.return_value.indices.create.call_args_list
+        }
+        assert {"zuul-tenants", "git-repos"} == created_indices
 
 
+@mock.patch("elasticsearch.Elasticsearch")
+def test_elasticsearch_init_with_prefix_multi(elmock, mock_index_prefix):
+    with mock_index_prefix("zubbi"):
+        # Define the existing indices for the mock
+        existing_indices = {"zubbi-zuul-jobs", "zubbi-ansible-roles", "unknown-index"}
+        elmock.return_value.indices.exists.side_effect = (
+            lambda index: index in existing_indices
+        )
+
+        init_elasticsearch_documents(using=elmock())
+        init_elasticsearch_documents(using=elmock())
+
+        # Evenv if we called the init() method multiple times, the index should only be
+        # prepended once.
+        checked_indices = {
+            call[1]["index"]
+            for call in elmock.return_value.indices.exists.call_args_list
+        }
+        assert {
+            "zubbi-zuul-jobs",
+            "zubbi-ansible-roles",
+            "zubbi-zuul-tenants",
+            "zubbi-git-repos",
+        } == checked_indices
+
+
+@mock.patch("elasticsearch.Elasticsearch")
 def test_elasticsearch_write(elmock):
-    init_elasticsearch_con("127.0.0.1", "user", "password")
+    # See comment in test_elasticsearch_write_with_prefix test function.
+    from zubbi.models import ZuulTenant
 
+    ZuulTenant.init(using=elmock())
     zt = ZuulTenant(name="foo")
-    zt.save()
+    zt.save(using=elmock())
 
     assert elmock.return_value.index.call_args == mock.call(
-        index="zuul-tenants", document=zt.to_dict()
+        index="zuul-tenants", body=zt.to_dict()
     )
 
 
-def test_elasticsearch_write_with_prefix(elmock):
-    init_elasticsearch_con("127.0.0.1", "user", "password", index_prefix="zubbi")
+@mock.patch("elasticsearch.Elasticsearch")
+def test_elasticsearch_write_with_prefix(elmock, mock_index_prefix):
+    with mock_index_prefix("zubbi"):
+        # Keep the import within the mock_index_prefix fixture or use
+        # the full-qualified module name. If the ZuulTenant is already
+        # imported outside of the fixture, the importlib.reload() call
+        # within the fixture won't have any effect as the ZuulTenant
+        # object is already defined.
+        from zubbi.models import ZuulTenant
 
-    zt = ZuulTenant(name="foo")
-    zt.save()
+        ZuulTenant.init(using=elmock())
+        zt = ZuulTenant(name="foo")
+        zt.save(using=elmock())
 
-    assert elmock.return_value.index.call_args == mock.call(
-        index="zubbi-zuul-tenants", document=zt.to_dict()
-    )
+        assert elmock.return_value.index.call_args == mock.call(
+            index="zubbi-zuul-tenants", body=zt.to_dict()
+        )

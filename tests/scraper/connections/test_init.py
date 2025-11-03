@@ -29,6 +29,7 @@ from zubbi.scraper.main import init_connections
 def patch_es(monkeypatch):
     # Patch the function where it is used, not the original one
     monkeypatch.setattr(zubbi.scraper.main, "init_elasticsearch_con", mock.Mock())
+    monkeypatch.setattr(zubbi.scraper.main, "init_elasticsearch_documents", mock.Mock())
 
 
 def test_init_gerrit_con(patch_es):

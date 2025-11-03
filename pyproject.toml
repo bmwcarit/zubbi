@@ -7,8 +7,7 @@ license-files = ["LICEN[CS]E.*"]
 dependencies = [
   "arrow",
   "click",
-  "elasticsearch<8.0.0",
-  "elasticsearch-dsl>=7.0.0,<8.0.0",
+  "elasticsearch<10.0.0",
   "pyyaml",
   "pyjwt",
   "pyzmq",

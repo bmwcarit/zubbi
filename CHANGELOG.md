@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Deprecated
+- **Configuration:** The Elasticsearch host must be specified as a full
+  qualified URL instead of different host and port parameters, e.g.
+  ```ini
+  ELASTICSEARCH = {
+    "host": "http(s)://<elasticsearch_host>:<port>",
+  }
+  ```
+- **CONFIGURATION:** The index prefix can now longer be specified via the
+  `settings.cfg` filed, but must be specified via the `ZUBBI_INDEX_PREFIX`
+  environment variable instead.
+
 ### General
 - Switched build framework from `pipenv` to `uv`
 - Replaced `flake8` and `black` with `ruff`
