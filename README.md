@@ -114,6 +114,23 @@ local environment accordingly:
 uv sync
 ```
 
+### Release a new version
+1. Prepare the `CHANGELOG.md` file for the next release version, push the change
+   and merge it.
+2. Create a git tag with the release version and push it to master, e.g.
+   ```shell
+   git tag v2.8.0
+   git push --tags
+   ```
+3. Create the source distribution and wheel files via `uv/make`:
+   ```shell
+   make dist
+   ```
+4. Upload the release to PyPI:
+   ```shell
+   twine upload --repository zubbi dist/*
+   ```
+
 ### Configuring and starting Zubbi
 If you followed the [Development](#development) guide so far, you should already
 have a virtual environment with all required packages to run Zubbi. What's left,
