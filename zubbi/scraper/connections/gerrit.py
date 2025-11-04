@@ -18,7 +18,6 @@ from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.exceptions import ScraperConfigurationError
 from zubbi.utils import urljoin
 
-
 LOGGER = logging.getLogger(__name__)
 
 

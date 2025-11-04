@@ -16,7 +16,6 @@ from datetime import datetime, timezone
 
 from zubbi.scraper.repo_parser import RepoParser
 
-
 JOB_1_SHA = "83bf1474a8a84cc1dddc8da435e2e4d9f4bbdeb1"
 JOB_2_SHA = "1e4008e1c0f4511579e49854c34905b419441331"
 JOB_3_SHA = "728e71a5ab9d095d7b983aee6db6ea4656072658"

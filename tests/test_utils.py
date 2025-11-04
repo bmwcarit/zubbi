@@ -17,7 +17,6 @@ from datetime import datetime, timezone
 import pytest
 from freezegun import freeze_time
 
-
 from zubbi.utils import last_changed_from_blame_range, prettydate
 
 BLAMES = [

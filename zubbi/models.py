@@ -23,7 +23,6 @@ from elasticsearch.helpers import bulk
 from elasticsearch_dsl import (
     Boolean,
     Completion,
-    connections,
     Date,
     Document,
     Integer,
@@ -31,6 +30,7 @@ from elasticsearch_dsl import (
     Q,
     Search,
     Text,
+    connections,
 )
 
 LOGGER = logging.getLogger(__name__)

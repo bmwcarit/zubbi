@@ -53,9 +53,9 @@ public IPs to make it reachable from outside the docker container.
 
 To get the whole stack up and running, do the following:
 ```shell
-$ cd docker
-$ docker-compose build
-$ docker-compose up
+cd docker
+docker-compose build
+docker-compose up
 ```
 
 This will build the docker container with the newest Zubbi version, start all
@@ -67,59 +67,69 @@ When everything is up, you can visit `http://localhost:5000` and explore the job
 and roles from the `openstack-infra/zuul-jobs` repo.
 
 ## Development
-Prerequisites: Python 3.6, [Tox](https://tox.readthedocs.io/en/latest/) and
-[Pipenv](https://docs.pipenv.org/) installed.
+Prerequisites: Python 3.10, and [uv](https://docs.astral.sh/uv/) installed.
 
 To install necessary dependencies for development, run:
 
 ```shell
-$ pipenv shell
-$ pipenv install --dev
+uv sync
 ```
 
-We are using [black](https://black.readthedocs.io/en/stable/) to ensure
+We are using [ruff](https://docs.astral.sh/ruff/formatter/) to ensure
 well-formatted Python code. To automatically ensure this on each commit, you can
 use the included pre-commit hook. To install the hook, simply run:
 
 ```shell
-$ pre-commit install
+pre-commit install
 ```
 
-Before submitting pull requests, run tests and static code checks using tox:
+Before submitting pull requests, run tests and static code checks using make:
 
 ```shell
-$ tox
+make lint
+make test
 ```
 
 ### Installing & updating dependencies
 
-New dependencies should be added to the `requires` list in the `setup.py` file:
-
-```python
-requires = [
-    "arrow",
-    "click",
-    ...,
-    "<new dependency>",
-]
-```
-
-Afterwards, run the following command to update the `Pipfile.lock` and install the
-new dependencies in your local pipenv environment:
-
+New dependencies should be added via `uv`:
 ```shell
-$ pipenv update
+uv add <dependency>
 ```
 
 Test dependencies should be installed as development dependencies:
-
 ```shell
-$ pipenv install --dev my-test-dependency
+uv add --dev <dependency>
 ```
 
-To update the dependencies to the latest version or after a new dependency was
-installed you have to run `tox -e update-requirements` and commit the changed
-Pipenv and requirements files.
+To update the dependencies to the latest version run
+```shell
+uv lock --upgrade
+```
+and commit the changed `uv.lock` file.
+
+Afterwards it's usually a good idea to run the following command to update the
+local environment accordingly:
+```shell
+uv sync
+```
+
+### Release a new version
+1. Prepare the `CHANGELOG.md` file for the next release version, push the change
+   and merge it.
+2. Create a git tag with the release version and push it to master, e.g.
+   ```shell
+   git tag v2.8.0
+   git push --tags
+   ```
+3. Create the source distribution and wheel files via `uv/make`:
+   ```shell
+   make dist
+   ```
+4. Upload the release to PyPI:
+   ```shell
+   twine upload --repository zubbi dist/*
+   ```
 
 ### Configuring and starting Zubbi
 If you followed the [Development](#development) guide so far, you should already
@@ -132,8 +142,8 @@ Zubbi is currently depending on Elasticsearch as data backend. If you have
 the provided `docker-compose.yaml` file to start Elasticsearch locally.
 
 ```shell
-$ cd docker
-$ docker-compose up elasticsearch
+cd docker
+docker-compose up elasticsearch
 ```
 
 If not, we recommend to use the latest available Elasticsearch Docker image, to
@@ -144,10 +154,10 @@ Both - Zubbi scraper and Zubbi web - read their configuration from the file path
 given via the `ZUBBI_SETTINGS` environment variable:
 
 ```shell
-$ export ZUBBI_SETTINGS=$(pwd)/settings.cfg
+export ZUBBI_SETTINGS=$(pwd)/settings.cfg
 ```
 
-In order to show jobs and roles in Zubbi, we need to provide a minimal 
+In order to show jobs and roles in Zubbi, we need to provide a minimal
 [tenant configuration](https://zuul-ci.org/docs/zuul/admin/tenants.html)
 containing at least a single repository (which is used as source).
 Therefore, put the following in a `tenant-config.yaml` file:
@@ -187,16 +197,16 @@ Now we can scrape the `openstack-infra/zuul-jobs` repository to get a first set
 of jobs and roles into Elasticsearch and show them in Zubbi:
 
 ```shell
-$ zubbi-scraper scrape --full
+zubbi-scraper scrape --full
 ```
 
 When the scraper run was successful, we can start Zubbi web to take a look at
 our data:
 
 ```shell
-$ export FLASK_APP=zubbi
-$ export FLASK_DEBUG=true
-$ flask run
+export FLASK_APP=zubbi
+export FLASK_DEBUG=true
+flask run
 ```
 
 ### Building the syntax highlighting stylesheet with pygments
@@ -207,7 +217,7 @@ stylesheet (e.g. to try out another highlighting style) you can run the followin
 command:
 
 ```shell
-$ pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
+pygmentize -S default -f html -a .highlight > zubbi/static/pygments.css
 ```
 
 ## Scraper usage
@@ -215,7 +225,7 @@ The Zubbi scraper supports two different modes: `periodic` (default) and `immedi
 To start the scraper in periodic mode, simply run:
 
 ```shell
-$ zubbi-scraper scrape
+zubbi-scraper scrape
 ```
 
 This should also scrape all repositories specified in the tenant configuration
@@ -225,10 +235,10 @@ To immediately scrape one or more repositories, you can use the following comman
 
 ```shell
 # Scrape one or more repositories
-$ zubbi-scraper scrape --repo 'orga1/repo1' --repo 'orga1/repo2'
+zubbi-scraper scrape --repo 'orga1/repo1' --repo 'orga1/repo2'
 
 # Scrape all repositories
-$ zubbi-scraper scrape --full
+zubbi-scraper scrape --full
 ```
 
 Additionally, the scraper provides a `list-repos` command to list all
@@ -236,7 +246,7 @@ available repositories together with some additional information like the
 last scraping timestamp and the git provider (connection type):
 
 ```shell
-$ zubbi-scraper list-repos
+zubbi-scraper list-repos
 ```
 
 ## Configuration examples

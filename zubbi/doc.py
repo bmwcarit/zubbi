@@ -24,8 +24,7 @@ from readme_renderer import markdown
 from sphinx.application import Sphinx
 from sphinx.util import logging as sphinx_logging
 from sphinx.util.console import nocolor
-from sphinx.util.docutils import docutils_namespace, patch_docutils, SphinxDirective
-
+from sphinx.util.docutils import SphinxDirective, docutils_namespace, patch_docutils
 
 LOGGER = logging.getLogger(__name__)
 
