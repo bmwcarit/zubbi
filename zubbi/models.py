@@ -14,13 +14,12 @@
 
 import collections
 import logging
+import os
 import ssl
 from urllib.parse import quote_plus
 
 import markupsafe
-from elasticsearch.exceptions import ElasticsearchException
-from elasticsearch.helpers import bulk
-from elasticsearch_dsl import (
+from elasticsearch.dsl import (
     Boolean,
     Completion,
     Date,
@@ -32,10 +31,13 @@ from elasticsearch_dsl import (
     Text,
     connections,
 )
+from elasticsearch.exceptions import ApiError
+from elasticsearch.helpers import bulk
 
 LOGGER = logging.getLogger(__name__)
 
-DEFAULT_ES_PORT = 9200
+ZUBBI_INDEX_PREFIX_ENV = "ZUBBI_INDEX_PREFIX"
+
 DEFAULT_SUGGEST_SIZE = 5
 
 DEFAULT_TLS_CONFIG = {
@@ -118,15 +120,25 @@ class ZubbiDoc(Document):
             objects = (d.to_dict(include_meta=True) for d in docs)
             client = connections.get_connection()
             return bulk(client, objects)
-        except ElasticsearchException:
+        except ApiError:
             LOGGER.exception("Writing data to Elasticsearch failed")
+
+    @classmethod
+    def prefix_name(cls, name):
+        prefix = os.environ.get(ZUBBI_INDEX_PREFIX_ENV)
+        if not prefix:
+            return name
+        # If the user set a '-' at the end of the prefix, strip it
+        # to not mess up the index names.
+        prefix = prefix.rstrip("-")
+        return "{}-{}".format(prefix, name)
 
 
 class ZuulTenant(ZubbiDoc):
     tenant_name = Text()
 
     class Index:
-        name = "zuul-tenants"
+        name = ZubbiDoc.prefix_name("zuul-tenants")
 
 
 class GitRepo(ZubbiDoc):
@@ -136,7 +148,7 @@ class GitRepo(ZubbiDoc):
     provider = Text()
 
     class Index:
-        name = "git-repos"
+        name = ZubbiDoc.prefix_name("git-repos")
 
 
 class Block(ZubbiDoc):
@@ -190,7 +202,7 @@ class AnsibleRole(Block):
     changelog_html = Text()
 
     class Index:
-        name = "ansible-roles"
+        name = ZubbiDoc.prefix_name("ansible-roles")
 
     @property
     def name(self):
@@ -216,7 +228,7 @@ class ZuulJob(Block):
     line_end = Integer()
 
     class Index:
-        name = "zuul-jobs"
+        name = ZubbiDoc.prefix_name("zuul-jobs")
 
     @property
     def name(self):
@@ -334,6 +346,7 @@ def get_elasticsearch_parameters_from_config(config):
 def init_elasticsearch(app):
     es_config = get_elasticsearch_parameters_from_config(app.config)
     init_elasticsearch_con(**es_config)
+    init_elasticsearch_documents()
 
     app.add_template_test(role_type)
     app.add_template_test(job_type)
@@ -347,21 +360,16 @@ def init_elasticsearch_con(
     host,
     user=None,
     password=None,
-    port=None,
     connection_params=None,
-    index_prefix=None,
     tls=None,
 ):
     if connection_params is None:
         connection_params = {}
 
-    connection_params["host"] = host
+    connection_params["hosts"] = host
     # Set authentication parameters if available
     if user and password:
-        connection_params["http_auth"] = (user, password)
-    if port is None:
-        port = DEFAULT_ES_PORT
-    connection_params["port"] = port
+        connection_params["basic_auth"] = (user, password)
 
     # Create ssl context if enabled
     ssl_context = None
@@ -371,38 +379,17 @@ def init_elasticsearch_con(
         ssl_context.check_hostname = tls["check_hostname"]
         ssl_context.verify_mode = getattr(ssl, tls["verify_mode"])
 
-    # Somehow the SSL context is not enough, we must also pass the use_ssl=True
-    use_ssl = ssl_context is not None
-
     connections.create_connection(
         **connection_params,
-        use_ssl=use_ssl,
         ssl_context=ssl_context,
+        verify_certs=tls.get("check_hostname"),
     )
 
-    # NOTE (felix): Hack to override the index names with prefix from config
-    # TODO (felix): Remove this once https://github.com/elastic/elasticsearch-dsl-py/pull/1099
-    # is merged and use the pattern described in the elasticsearch-dsl documentation
-    # https://elasticsearch-dsl.readthedocs.io/en/latest/persistence.html#index
-    #
-    # Unfortunately, this pattern is currently only working for document.init(),
-    # while the search() and save() methods will still use the original index name
-    # set in the index-meta class.
-    # This unexpected behaviour is also described in
-    # https://github.com/elastic/elasticsearch-dsl-py/issues/1121 and
-    # https://github.com/elastic/elasticsearch-dsl-py/issues/1091.
-    if index_prefix:
-        # If the user set a '-' at the end of the prefix, we don't want to end
-        # up in messy index names
-        index_prefix = index_prefix.rstrip("-")
-        for idx_cls in [ZuulJob, AnsibleRole, ZuulTenant, GitRepo]:
-            # NOTE (felix): Index.name seems to hold the constant value that we defined
-            # in our index-meta class for the document. _index._name on the other hand
-            # holds the active value. Thus, we can use this to ensure that the prefix
-            # is only prepended once, even if we call this method multiple times.
-            idx_cls._index._name = "{}-{}".format(index_prefix, idx_cls.Index.name)
 
-    ZuulJob.init()
-    AnsibleRole.init()
-    ZuulTenant.init()
-    GitRepo.init()
+def init_elasticsearch_documents(using=None):
+    # The parameter "using" is only used in the tests to directly
+    # provide a fake elasticsearch client directly to the init calls.
+    ZuulJob.init(using=using)
+    AnsibleRole.init(using=using)
+    ZuulTenant.init(using=using)
+    GitRepo.init(using=using)

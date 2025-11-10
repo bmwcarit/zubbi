@@ -271,13 +271,9 @@ the following:
 
 ```ini
 ELASTICSEARCH = {
-    'host': '<elasticsearch_host>',
-    'port': 9200,  # default
+    'host': 'http(s)://<elasticsearch_host>:<port>',
     'user': '<user>',
     'password': '<password>',
-    # Optional, to avoid name clashes with existing ES indices from other applications
-    # E.g. 'zubbi' will result in indices like 'zubbi-zuul-jobs', 'zubbi-ansible-roles', ...
-    index_prefix: '<prefix>',
     # Optional, to enable SSL for the Elasticsearch connection.
     # You must at least set 'enabled' to True and provide other parameters if the default
     # values are not sufficient.
@@ -288,6 +284,10 @@ ELASTICSEARCH = {
     },
 }
 ```
+
+To avoid name clashes with existing indices in Elasticsearch, one could specify
+an index prefix via the `ZUBBI_INDEX_PREFIX` environment variable. This prefix
+will be applied to all indices that are used by Zubbi.
 
 ## Available Connections
 Currently, Zubbi supports the following connection types: **GitHub**, **Gerrit**

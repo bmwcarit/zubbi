@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import pytest
+from elastic_transport import ObjectApiResponse
 
 
 @pytest.mark.parametrize(
@@ -32,17 +33,20 @@ def test_views_reachable(flask_client, endpoint, expected):
 
 def test_detail_view(flask_client, es_client):
     # Build a simple ES response, containing a minimal role result
-    response = {
-        "hits": {
-            "hits": [
-                {
-                    "_index": "ansible-roles",
-                    "_type": "doc",
-                    "_source": {"role_name": "foo", "repo": "repo_name"},
-                }
-            ]
-        }
-    }
+    response = ObjectApiResponse(
+        meta=None,
+        body={
+            "hits": {
+                "hits": [
+                    {
+                        "_index": "ansible-roles",
+                        "_type": "doc",
+                        "_source": {"role_name": "foo", "repo": "repo_name"},
+                    }
+                ]
+            }
+        },
+    )
 
     es_client.search.return_value = response
     # TODO (fschmidt): Make this work similar to requests.mock
@@ -59,9 +63,14 @@ def test_detail_view_unknown_block_type(flask_client):
 
 
 def test_auto_complete_view(flask_client, es_client):
-    response = {
-        "suggest": {"suggester": [{"options": [{"text": "foo"}, {"text": "foobar"}]}]}
-    }
+    response = ObjectApiResponse(
+        meta=None,
+        body={
+            "suggest": {
+                "suggester": [{"options": [{"text": "foo"}, {"text": "foobar"}]}]
+            }
+        },
+    )
 
     es_client.search.return_value = response
     rv = flask_client.get("/api/search/autocomplete?term=foo")

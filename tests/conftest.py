@@ -18,7 +18,8 @@ from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import pytest
-from elasticsearch_dsl.connections import connections
+from elastic_transport import ObjectApiResponse
+from elasticsearch.dsl.connections import connections
 
 import zubbi
 from zubbi.scraper.repos import Repository
@@ -273,6 +274,7 @@ def payload_webhook_push():
 def flask_client(monkeypatch):
     # Mock elasticsearch connection method which is called when the app is created
     monkeypatch.setattr(zubbi.models, "init_elasticsearch_con", mock.Mock())
+    monkeypatch.setattr(zubbi.models, "init_elasticsearch_documents", mock.Mock())
 
     config = {
         "ES_HOST": "localhost",
@@ -291,10 +293,10 @@ def flask_client(monkeypatch):
 
 @pytest.fixture(scope="function")
 def es_client():
-    # NOTE (fschmidt): I took a look on how elasticsearch-dsl does the mocking:
-    # https://github.com/elastic/elasticsearch-dsl-py/blob/master/test_elasticsearch_dsl/conftest.py
+    # This is based on the client mock in the elasticsearch python library:
+    # https://github.com/elastic/elasticsearch-py/blob/026f515351a1cb1b36e6cc81e0e10ff5aea569ce/test_elasticsearch/test_dsl/conftest.py#L173
     client = mock.Mock()
-    client.search.return_value = {}
+    client.search.return_value = ObjectApiResponse(meta=None, body={})
     connections.add_connection("default", client)
     yield client
     connections._conn = {}

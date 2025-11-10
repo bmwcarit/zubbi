@@ -23,8 +23,8 @@ from datetime import datetime, timedelta, timezone
 
 import click
 import zmq
+from elasticsearch.dsl import Q
 from elasticsearch.exceptions import ConflictError
-from elasticsearch_dsl import Q
 from flask.config import Config
 from tabulate import tabulate
 
@@ -36,6 +36,7 @@ from zubbi.models import (
     ZuulTenant,
     get_elasticsearch_parameters_from_config,
     init_elasticsearch_con,
+    init_elasticsearch_documents,
 )
 from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.git import GitConnection
@@ -290,6 +291,7 @@ def init_connections(config):
     # Initialize Elasticsearch connection
     es_config = get_elasticsearch_parameters_from_config(config)
     init_elasticsearch_con(**es_config)
+    init_elasticsearch_documents()
 
     connections = {}
     for con_name, con_data in config["CONNECTIONS"].items():
