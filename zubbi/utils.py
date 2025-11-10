@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from datetime import datetime, timezone
+from importlib.metadata import PackageNotFoundError, version
 
 import arrow
-import pkg_resources
 
 
 def urljoin(base, *parts):
@@ -61,7 +61,6 @@ def prettydate(date):
 
 def get_version():
     try:
-        version = pkg_resources.get_distribution("zubbi").version
-    except pkg_resources.DistributionNotFound:
-        version = "unknown"
-    return version
+        return version("zubbi")
+    except PackageNotFoundError:
+        return "unkown"
