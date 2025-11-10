@@ -178,8 +178,7 @@ the `source` names in the tenant configuration.
 
 ```ini
 ELASTICSEARCH = {
-    'host': 'localhost',
-    'port': 9200,
+    'host': 'http://localhost:9200',
 }
 
 TENANT_SOURCES_FILE = 'tenant-config.yaml'
