@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.0.0
 
 ### Deprecated
 - **Configuration:** The Elasticsearch host must be specified as a full
@@ -19,6 +19,7 @@
 - Replaced `flake8` and `black` with `ruff`
 - Updated unpinned dependencies to newest versions
 - Raise minimum required python version to `3.10`
+- Updated dependency `elasticsearch` to v9
 
 ## 2.7.0
 
