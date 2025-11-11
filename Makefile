@@ -26,7 +26,7 @@ update:
 	uv lock --upgrade
 
 dist:
-	uv build
+	uv build --no-sources
 
 # Commands without file dependencies
 .PHONY: help lint test dist
