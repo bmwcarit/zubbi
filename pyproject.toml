@@ -85,3 +85,7 @@ packages = ["zubbi"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=zubbi --cov-report=term --cov-report=html --cov-report=xml --verbose"
+
+[tool.ruff]
+line-length = 88
+lint.select = ["E4", "E7", "E9", "F", "I"]
