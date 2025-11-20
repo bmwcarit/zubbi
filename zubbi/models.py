@@ -33,6 +33,7 @@ from elasticsearch.dsl import (
 )
 from elasticsearch.exceptions import ApiError
 from elasticsearch.helpers import bulk
+from elasticsearch.helpers.errors import BulkIndexError
 
 LOGGER = logging.getLogger(__name__)
 
@@ -120,7 +121,7 @@ class ZubbiDoc(Document):
             objects = (d.to_dict(include_meta=True) for d in docs)
             client = connections.get_connection()
             return bulk(client, objects)
-        except ApiError:
+        except (ApiError, BulkIndexError):
             LOGGER.exception("Writing data to Elasticsearch failed")
 
     @classmethod
