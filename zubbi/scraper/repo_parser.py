@@ -192,10 +192,36 @@ class ZuulSafeLoader(yaml.SafeLoader):
     def __init__(self, *args, **kwargs):
         super(ZuulSafeLoader, self).__init__(*args, **kwargs)
         self.add_multi_constructor("!encrypted/", self.construct_encrypted)
+        self.add_constructor("!override", self.construct_override)
+        self.add_constructor("!inherit", self.construct_inherit)
 
     @classmethod
     def construct_encrypted(cls, loader, tag_suffix, node):
         return loader.construct_sequence(node)
+
+    @classmethod
+    def construct_override(cls, loader, node):
+        """Handle !override tag - returns the value as-is, overriding parent"""
+        # Get the actual value (could be scalar, sequence, or mapping)
+        if isinstance(node, yaml.ScalarNode):
+            return loader.construct_scalar(node)
+        elif isinstance(node, yaml.SequenceNode):
+            return loader.construct_sequence(node)
+        elif isinstance(node, yaml.MappingNode):
+            return loader.construct_mapping(node)
+        return None
+
+    @classmethod
+    def construct_inherit(cls, loader, node):
+        """Handle !inherit tag - returns the value to be merged with parent"""
+        # Get the actual value (could be scalar, sequence, or mapping)
+        if isinstance(node, yaml.ScalarNode):
+            return loader.construct_scalar(node)
+        elif isinstance(node, yaml.SequenceNode):
+            return loader.construct_sequence(node)
+        elif isinstance(node, yaml.MappingNode):
+            return loader.construct_mapping(node)
+        return None
 
     def compose_node(self, parent, index):
         line = self.line

@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.0
+
+### New Features
+- Added support for `!override` and `!inherit` Zuul YAML tags in `ZuulSafeLoader` for enhanced job configuration flexibility.
+
 ## 3.0.0
 
 ### Deprecated
