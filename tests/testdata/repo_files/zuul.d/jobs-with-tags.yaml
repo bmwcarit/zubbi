@@ -1,0 +1,21 @@
+- job:
+    name: job-with-override-scalar
+    parent: !override base
+    description: |
+      Job with override tag on scalar.
+
+- job:
+    name: job-with-inherit-mapping
+    vars: !inherit
+      custom_var: value1
+      another_var: value2
+    description: |
+      Job with inherit tag on mapping.
+
+- job:
+    name: job-with-override-sequence
+    required-projects: !override
+      - project-a
+      - project-b
+    description: |
+      Job with override tag on sequence.

@@ -290,3 +290,38 @@ def test_parse_reusable_repo(repo_data):
     assert job_4.to_dict(skip_empty=False)["reusable"]
     assert role_1.to_dict(skip_empty=False)["reusable"]
     assert role_2.to_dict(skip_empty=False)["reusable"]
+
+
+def test_parse_jobs_with_override_and_inherit_tags(repo_data):
+    """Test that jobs with !override and !inherit tags are parsed correctly."""
+    scrape_time = datetime.now(timezone.utc)
+    repo, tenants, job_files, role_files = repo_data
+
+    jobs, roles = RepoParser(
+        repo,
+        tenants,
+        job_files,
+        role_files,
+        scrape_time,
+        is_reusable_repo=False,
+    ).parse()
+
+    # Find jobs with tags
+    override_job = [j for j in jobs if j["job_name"] == "job-with-override-scalar"]
+    inherit_job = [j for j in jobs if j["job_name"] == "job-with-inherit-mapping"]
+    override_seq_job = [j for j in jobs if j["job_name"] == "job-with-override-sequence"]
+
+    # All three jobs should be found and parsed successfully
+    # This proves the YAML tags (!override and !inherit) were parsed without errors
+    assert len(override_job) == 1
+    assert len(inherit_job) == 1
+    assert len(override_seq_job) == 1
+
+    # Verify the parent field was extracted correctly from the !override tag
+    assert override_job[0]["parent"] == "base"
+
+    # Verify the inherit job was parsed correctly (has description)
+    assert "inherit tag on mapping" in inherit_job[0]["description"]
+
+    # Verify the override sequence job was parsed correctly (has description)
+    assert "override tag on sequence" in override_seq_job[0]["description"]
