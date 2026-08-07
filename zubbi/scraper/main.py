@@ -41,7 +41,7 @@ from zubbi.models import (
 from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.connections.github import GitHubConnection
-from zubbi.scraper.exceptions import ScraperConfigurationError
+from zubbi.scraper.exceptions import ConfigurationError, ScraperConfigurationError
 from zubbi.scraper.repo_parser import RepoParser
 from zubbi.scraper.repos.gerrit import GerritRepository
 from zubbi.scraper.repos.git import GitRepository
@@ -241,7 +241,15 @@ def scrape(ctx, full, repo):
         # Listen to ZMQ messages
         socket_addr = config.get("ZMQ_SUB_SOCKET_ADDRESS")
         timeout = config.get("ZMQ_SUB_TIMEOUT")
-        use_ipv6 = as_bool(config.get("ZMQ_SUB_SOCKET_IPV6", False))
+        try:
+            use_ipv6 = as_bool(config.get("ZMQ_SUB_SOCKET_IPV6", False))
+        except ValueError as e:
+            LOGGER.warning(
+                "Invalid configuration value for ZMQ_SUB_SOCKET_IPV6: '%s'."
+                "Please use a boolean value (True/False).",
+                config.get("ZMQ_SUB_SOCKET_IPV6"),
+            )
+            raise ConfigurationError from e
         socket = create_zmq_socket(socket_addr, timeout, use_ipv6=use_ipv6)
 
         while True:

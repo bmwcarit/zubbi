@@ -19,8 +19,9 @@ from functools import wraps
 import zmq
 from cachelib import NullCache, SimpleCache
 from flask import current_app
-from .utils import as_bool
 
+from zubbi.scraper.exceptions import ConfigurationError
+from zubbi.utils import as_bool
 
 LOGGER = logging.getLogger(__name__)
 
@@ -72,11 +73,19 @@ def get_zmq_socket():
     if "zmq_socket" not in current_app.extensions:
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
-        if as_bool(current_app.config.get("ZMQ_PUB_SOCKET_IPV6", False)):
-            socket.setsockopt(zmq.IPV6, 1)
-            LOGGER.info("ZMQ_PUB_SOCKET_IPV6 is enabled")
-        else:
-            LOGGER.warning("ZMQ_PUB_SOCKET_IPV6 is not enabled")
+        try:
+            if as_bool(current_app.config.get("ZMQ_PUB_SOCKET_IPV6", False)):
+                socket.setsockopt(zmq.IPV6, 1)
+                LOGGER.info("ZMQ_PUB_SOCKET_IPV6 is enabled")
+            else:
+                LOGGER.info("ZMQ_PUB_SOCKET_IPV6 is not enabled")
+        except ValueError as e:
+            LOGGER.warning(
+                "Invalid configuration value for ZMQ_PUB_SOCKET_IPV6: '%s'."
+                "Please use a boolean value (True/False).",
+                current_app.config.get("ZMQ_PUB_SOCKET_IPV6"),
+            )
+            raise ConfigurationError from e
         socket_addr = current_app.config["ZMQ_PUB_SOCKET_ADDRESS"]
         socket.bind(socket_addr)
         current_app.extensions["zmq_socket"] = socket

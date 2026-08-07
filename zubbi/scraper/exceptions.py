@@ -28,7 +28,13 @@ class CheckoutError(RepositoryError):
         super().__init__(msg)
 
 
-class ScraperConfigurationError(Exception):
+class ConfigurationError(Exception):
+    """Exception if the configuration is wrong."""
+
+    pass
+
+
+class ScraperConfigurationError(ConfigurationError):
     """Exception if the scraper configuration is wrong."""
 
     pass
