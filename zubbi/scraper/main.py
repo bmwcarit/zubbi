@@ -41,13 +41,14 @@ from zubbi.models import (
 from zubbi.scraper.connections.gerrit import GerritConnection
 from zubbi.scraper.connections.git import GitConnection
 from zubbi.scraper.connections.github import GitHubConnection
-from zubbi.scraper.exceptions import ScraperConfigurationError
+from zubbi.scraper.exceptions import ConfigurationError, ScraperConfigurationError
 from zubbi.scraper.repo_parser import RepoParser
 from zubbi.scraper.repos.gerrit import GerritRepository
 from zubbi.scraper.repos.git import GitRepository
 from zubbi.scraper.repos.github import GitHubRepository
 from zubbi.scraper.scraper import Scraper
 from zubbi.scraper.tenant_parser import TenantParser
+from zubbi.utils import as_bool
 
 LOGGER = logging.getLogger(__name__)
 
@@ -240,7 +241,16 @@ def scrape(ctx, full, repo):
         # Listen to ZMQ messages
         socket_addr = config.get("ZMQ_SUB_SOCKET_ADDRESS")
         timeout = config.get("ZMQ_SUB_TIMEOUT")
-        socket = create_zmq_socket(socket_addr, timeout)
+        try:
+            use_ipv6 = as_bool(config.get("ZMQ_SUB_SOCKET_IPV6", False))
+        except ValueError as e:
+            LOGGER.warning(
+                "Invalid configuration value for ZMQ_SUB_SOCKET_IPV6: '%s'."
+                "Please use a boolean value (True/False).",
+                config.get("ZMQ_SUB_SOCKET_IPV6"),
+            )
+            raise ConfigurationError from e
+        socket = create_zmq_socket(socket_addr, timeout, use_ipv6=use_ipv6)
 
         while True:
             # Check if a periodic run is necessary
@@ -275,11 +285,16 @@ def scrape(ctx, full, repo):
                     LOGGER.debug("Did not receive any ZMQ message")
 
 
-def create_zmq_socket(socket_addr, timeout):
+def create_zmq_socket(socket_addr, timeout, use_ipv6=False):
     socket = None
     if socket_addr and timeout:
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
+        if use_ipv6:
+            socket.setsockopt(zmq.IPV6, 1)
+            LOGGER.info("ZMQ_SUB_SOCKET_IPV6 is enabled")
+        else:
+            LOGGER.warning("ZMQ_SUB_SOCKET_IPV6 is not enabled")
         socket.connect(socket_addr)
         socket.setsockopt_string(zmq.SUBSCRIBE, "")
         # Timeout is in seconds, but ZMQ uses milliseconds
