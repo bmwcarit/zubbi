@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.0
+
+### New Features
+- **Configuration:** The ZMQ sockets used for internal communication
+  between zubbi-scraper and zubbi-web can now be configured using IPv6.
+
 ## 3.0.0
 
 ### Deprecated
