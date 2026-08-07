@@ -13,11 +13,16 @@
 # limitations under the License.
 
 import atexit
+import logging
 from functools import wraps
 
 import zmq
 from cachelib import NullCache, SimpleCache
 from flask import current_app
+from .utils import as_bool
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def cached(key, timeout=3600):
@@ -67,6 +72,11 @@ def get_zmq_socket():
     if "zmq_socket" not in current_app.extensions:
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
+        if as_bool(current_app.config.get("ZMQ_PUB_SOCKET_IPV6", False)):
+            socket.setsockopt(zmq.IPV6, 1)
+            LOGGER.info("ZMQ_PUB_SOCKET_IPV6 is enabled")
+        else:
+            LOGGER.warning("ZMQ_PUB_SOCKET_IPV6 is not enabled")
         socket_addr = current_app.config["ZMQ_PUB_SOCKET_ADDRESS"]
         socket.bind(socket_addr)
         current_app.extensions["zmq_socket"] = socket

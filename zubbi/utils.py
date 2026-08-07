@@ -64,3 +64,23 @@ def get_version():
         return version("zubbi")
     except PackageNotFoundError:
         return "unkown"
+
+
+def as_bool(value, default=False):
+    """Normalize config-like values to a strict boolean.
+
+    Accepts bools, numbers and common string representations.
+    """
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "t", "yes", "y", "on"}:
+            return True
+        if normalized in {"0", "false", "f", "no", "n", "off", ""}:
+            return False
+    raise ValueError(f"Invalid boolean value: {value!r}")

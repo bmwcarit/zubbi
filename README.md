@@ -345,7 +345,27 @@ communication work, you need to specify the following parameters in your `settin
 ZMQ_PUB_SOCKET_ADDRESS = 'tcp://*:5556'
 # Zubbi scraper (subscribe)
 ZMQ_SUB_SOCKET_ADDRESS = 'tcp://localhost:5556'
+# Optional: enable IPv6 for the publishing socket (default: False)
+ZMQ_PUB_SOCKET_IPV6 = True
+# Optional: enable IPv6 for the subscribing socket (default: False)
+ZMQ_SUB_SOCKET_IPV6 = True
 ```
+
+For IPv6 setups, use IPv6 socket addresses and enable `ZMQ_PUB_SOCKET_IPV6`:
+
+```ini
+# Zubbi web (publish on all interfaces, using IPv6)
+ZMQ_PUB_SOCKET_ADDRESS = 'tcp://*:5556'
+ZMQ_PUB_SOCKET_IPV6 = True
+
+# Zubbi scraper (subscribe)
+ZMQ_SUB_SOCKET_ADDRESS = 'tcp://[::1]:5556'
+ZMQ_SUB_SOCKET_IPV6 = True
+```
+
+`ZMQ_PUB_SOCKET_IPV6`/`ZMQ_SUB_SOCKET_IPV6` should be a real boolean in
+`settings.cfg` (`True` or `False`). String values are parsed as well,
+but booleans are recommended for clarity.
 
 ### Gerrit
 In contrary to GitHub, the Gerrit connection is based on
