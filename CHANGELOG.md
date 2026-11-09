@@ -5,6 +5,10 @@
 ### New Features
 - Added support for `!override` and `!inherit` Zuul YAML tags in `ZuulSafeLoader` for enhanced job configuration flexibility.
 
+### Security
+
+- Upgrade `pyjwt` to version `2.15.1`
+
 ## 3.1.0
 
 ### New Features

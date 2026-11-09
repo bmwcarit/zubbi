@@ -9,7 +9,7 @@ dependencies = [
   "click",
   "elasticsearch<10.0.0",
   "pyyaml",
-  "pyjwt",
+  "pyjwt>=2.15.1",
   "pyzmq",
   "cachelib",
   "cryptography",
