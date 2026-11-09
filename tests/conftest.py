@@ -99,6 +99,10 @@ def repo_data():
             "content": raw_file("repo_files/zuul-extra.d/extra-jobs.yaml"),
             "blame": [],
         },
+        "zuul.d/jobs-with-tags.yaml": {
+            "content": raw_file("repo_files/zuul.d/jobs-with-tags.yaml"),
+            "blame": [],
+        },
     }
 
     role_files = {
